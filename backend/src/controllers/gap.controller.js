@@ -16,6 +16,9 @@ async function analyse(req, res, next) {
     form.append('board', board);
     form.append('exam', exam);
     form.append('subject', subject);
+    if (req.body.max_module_generation) {
+      form.append('max_module_generation', req.body.max_module_generation);
+    }
 
     let aiResult;
     try {

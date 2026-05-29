@@ -22,6 +22,7 @@ export default function GapUploadForm({ onResult }) {
   const [board,setBoard]     = useState('');
   const [exam,setExam]       = useState('');
   const [subject,setSubject] = useState('');
+  const [maxModules,setMaxModules] = useState('5');
   const [loading,setLoading] = useState(false);
   const [error,setError]     = useState('');
 
@@ -43,6 +44,7 @@ export default function GapUploadForm({ onResult }) {
       const fd = new FormData();
       fd.append('syllabus', file); fd.append('board', board);
       fd.append('exam', exam);     fd.append('subject', subject);
+      fd.append('max_module_generation', maxModules);
       const result = await analyseGap(fd);
       onResult(result);
     } catch (err) {
@@ -69,6 +71,7 @@ export default function GapUploadForm({ onResult }) {
           { label:'State Board', value:board, set:setBoard, opts:STATE_BOARDS, placeholder:'Select board…' },
           { label:'Target Exam', value:exam, set:(v)=>{ setExam(v); setSubject(''); }, opts:NATIONAL_EXAMS, placeholder:'Select exam…' },
           { label:'Subject', value:subject, set:setSubject, opts:SUBJECTS[exam]||[], placeholder:'Select subject…', disabled:!exam },
+          { label:'Max Modules', value:maxModules, set:setMaxModules, opts:['1','2','3','4','5','6','7','8','9','10'], placeholder:'Select modules…' },
         ].map(({ label, value, set, opts, placeholder, disabled }) => (
           <div className="form-group" key={label}>
             <label>{label}</label>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import RegionPicker from './RegionPicker';
-import { generateHyperlocal } from '../../api/hyperlocalGen';
+import { generateHyperlocal, batchGenerateHyperlocal } from '../../api/hyperlocalGen';
 import Loader from '../common/Loader';
 import ErrorBanner from '../common/ErrorBanner';
 
@@ -13,16 +13,30 @@ export default function HyperForm({ onResult }) {
   const [subject,setSubject] = useState('');
   const [cls,setCls]         = useState('11');
   const [region,setRegion]   = useState('');
+  const [regions,setRegions] = useState([]);
+  const [isBatch,setIsBatch] = useState(false);
   const [loading,setLoading] = useState(false);
   const [error,setError]     = useState('');
 
   const handleSubmit = async () => {
-    if (!text.trim() || !concept.trim() || !subject || !region) {
+    if (!text.trim() || !concept.trim() || !subject) {
       setError('Please fill all fields.'); return;
     }
+    if (isBatch && regions.length === 0) {
+      setError('Please select at least one region.'); return;
+    }
+    if (!isBatch && !region) {
+      setError('Please select a region.'); return;
+    }
+
     setLoading(true); setError('');
     try {
-      const result = await generateHyperlocal({ original_text:text, concept, subject, class_level:cls, region_key:region });
+      let result;
+      if (isBatch) {
+        result = await batchGenerateHyperlocal({ original_text:text, concept, subject, class_level:cls, region_keys:regions });
+      } else {
+        result = await generateHyperlocal({ original_text:text, concept, subject, class_level:cls, region_key:region });
+      }
       onResult(result);
     } catch (err) {
       setError(err.response?.data?.message || 'Generation failed. Please try again.');
@@ -62,10 +76,19 @@ export default function HyperForm({ onResult }) {
         </div>
       </div>
 
-      <RegionPicker value={region} onChange={setRegion} />
+      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <input type="checkbox" id="batchToggle" checked={isBatch} onChange={e => setIsBatch(e.target.checked)} />
+        <label htmlFor="batchToggle" style={{ margin:0, fontWeight:600 }}>Batch generate for multiple regions</label>
+      </div>
+
+      <RegionPicker 
+        value={isBatch ? regions : region} 
+        onChange={isBatch ? setRegions : setRegion} 
+        multi={isBatch} 
+      />
       <ErrorBanner message={error} />
       <button className="btn btn-primary btn-lg" onClick={handleSubmit} style={{ alignSelf:'flex-start' }}>
-        Localise This →
+        {isBatch ? 'Batch Localise →' : 'Localise This →'}
       </button>
     </div>
   );
