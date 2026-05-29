@@ -10,6 +10,12 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('noor_token'));
   const [loading, setLoading] = useState(true);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('noor_token');
+    delete api.defaults.headers.common['Authorization'];
+    setToken(null); setUser(null);
+  }, []);
+
   useEffect(() => {
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -19,12 +25,6 @@ export function AuthProvider({ children }) {
         .finally(() => setLoading(false));
     } else { setLoading(false); }
   }, [token, logout]);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('noor_token');
-    delete api.defaults.headers.common['Authorization'];
-    setToken(null); setUser(null);
-  }, []);
 
   const login = (tok, userData) => {
     localStorage.setItem('noor_token', tok);
