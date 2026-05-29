@@ -1,0 +1,16 @@
+{
+  "region": "West Bengal",
+  "state": "West Bengal",
+  "language_hint": "Bengali",
+  "geography": ["Sundarbans delta", "Gangetic plain", "Darjeeling hills", "Hooghly River", "Bay of Bengal coast"],
+  "occupations": ["rice farming", "jute cultivation", "fishing", "tea garden work", "handloom weaving", "pottery"],
+  "foods": ["rice and machher jhol", "mishti doi", "sandesh and rasgulla", "hilsa curry", "luchi and alur dom", "muri"],
+  "festivals": ["Durga Puja", "Kali Puja", "Poila Boishakh", "Eid", "Dol Yatra"],
+  "units_of_measure": ["bigha (land)", "seer (weight)", "dhali (basket)"],
+  "local_markets": ["Howrah flower market", "Gariahat market Kolkata", "New Market Kolkata"],
+  "animals": ["Royal Bengal Tiger", "Gangetic dolphin", "Irrawaddy dolphin", "hilsa fish", "Olive Ridley turtle"],
+  "water_sources": ["Hooghly River", "canal network", "pond (pukur)"],
+  "famous_for": ["Sundarbans mangroves", "Darjeeling tea", "Victoria Memorial", "Durga Puja celebrations"],
+  "distances": ["Kolkata to Darjeeling 600 km", "Kolkata to Sundarbans 100 km"],
+  "sample_rewrite_hint": "Use rice paddy fields, river boat journeys, fish catch, Durga Puja crowd sizes, and jute bale weights."
+}

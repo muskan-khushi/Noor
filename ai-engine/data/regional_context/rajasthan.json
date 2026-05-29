@@ -1,0 +1,16 @@
+{
+  "region": "Rajasthan",
+  "state": "Rajasthan",
+  "language_hint": "Hindi",
+  "geography": ["Thar Desert", "Aravalli Hills", "Chambal River", "Luni River", "Sambhar Salt Lake"],
+  "occupations": ["camel herding", "textile weaving", "marble mining", "salt farming", "millet and bajra farming", "block printing", "gem cutting"],
+  "foods": ["dal baati churma", "bajre ki roti", "ker sangri", "ghevar", "mawa kachori", "gatte ki sabzi", "laal maas"],
+  "festivals": ["Teej", "Gangaur", "Pushkar Mela", "Camel Festival", "Desert Festival Jaisalmer", "Marwar Festival"],
+  "units_of_measure": ["bigha (land area)", "ser (weight ~900g)", "kos (distance ~3km)", "panseri (5kg)"],
+  "local_markets": ["Jodhpur spice market Sardar Bazaar", "Jaipur gem market Johari Bazaar", "Pushkar camel fair", "Barmer handicraft market"],
+  "animals": ["camel", "peacock", "nilgai", "chinkara", "desert fox", "sand grouse"],
+  "water_sources": ["baoli (stepwell)", "taanka (underground rainwater tank)", "johad (pond)"],
+  "famous_for": ["Blue City of Jodhpur", "Pink City of Jaipur", "Golden City of Jaisalmer", "Mehrangarh Fort", "Ranthambore", "Chittorgarh Fort"],
+  "distances": ["Jodhpur to Jaisalmer 285 km", "Jodhpur to Jaipur 335 km", "Barmer to Bikaner 200 km"],
+  "sample_rewrite_hint": "Use camel trading, millet fields, desert distances, johads, and bajra prices. Replace cars with camels or jeeps on desert roads."
+}

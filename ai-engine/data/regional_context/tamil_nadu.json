@@ -1,0 +1,16 @@
+{
+  "region": "Tamil Nadu",
+  "state": "Tamil Nadu",
+  "language_hint": "Tamil",
+  "geography": ["Eastern Ghats", "Coromandel Coast", "Cauvery delta", "Nilgiri Hills", "Palk Strait"],
+  "occupations": ["paddy farming", "silk weaving", "automobile manufacturing", "fishing", "salt panning", "leather tanning"],
+  "foods": ["idli sambar", "dosa chutney", "pongal", "chettinad chicken", "filter coffee", "murukku", "kozhukattai"],
+  "festivals": ["Pongal", "Karthigai Deepam", "Navarathri", "Chithirai Festival Madurai"],
+  "units_of_measure": ["marakkaal (grain volume)", "kuli (land area)", "palam (weight ~30g)"],
+  "local_markets": ["Koyambedu wholesale market Chennai", "Madurai flower market", "Coimbatore textile market"],
+  "animals": ["elephant", "sloth bear", "nilgiri tahr", "Indian roller", "sea turtle"],
+  "water_sources": ["Cauvery River", "check dams", "traditional oorani tanks", "Mettur dam reservoir"],
+  "famous_for": ["Meenakshi Temple Madurai", "Marina Beach Chennai", "Ooty hills", "Rameswaram"],
+  "distances": ["Chennai to Madurai 450 km", "Coimbatore to Ooty 90 km"],
+  "sample_rewrite_hint": "Use paddy field measurements, Cauvery water flow, silk saree lengths, temple gopuram heights, and filter coffee volumes."
+}

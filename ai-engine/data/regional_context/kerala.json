@@ -1,0 +1,16 @@
+{
+  "region": "Kerala",
+  "state": "Kerala",
+  "language_hint": "Malayalam",
+  "geography": ["Western Ghats", "backwaters", "Arabian Sea coast", "Periyar River", "Vembanad Lake"],
+  "occupations": ["coconut farming", "fishing", "rubber tapping", "coir making", "spice cultivation", "houseboat tourism"],
+  "foods": ["puttu and kadala curry", "appam and stew", "fish curry with rice", "banana chips", "payasam", "karimeen pollichathu"],
+  "festivals": ["Onam", "Vishu", "Thrissur Pooram", "Vallam Kali boat race", "Theyyam"],
+  "units_of_measure": ["cent (land)", "para (grain measure)", "nali (volume)"],
+  "local_markets": ["Mattancherry spice market", "Chalai bazaar Trivandrum", "fish market Kozhikode"],
+  "animals": ["elephant", "Malabar giant squirrel", "kingfisher", "crab", "prawns"],
+  "water_sources": ["backwater canals", "rice paddy irrigation channels", "Periyar reservoir"],
+  "famous_for": ["backwater houseboats", "Munnar tea gardens", "Periyar Wildlife Sanctuary", "Kovalam beach"],
+  "distances": ["Thiruvananthapuram to Kochi 200 km by road", "Kochi to Munnar 130 km"],
+  "sample_rewrite_hint": "Use coconut groves, backwater canals, fish catch weights, boat journeys, and rubber plantation distances."
+}

@@ -1,0 +1,16 @@
+{
+  "region": "Andhra Pradesh",
+  "state": "Andhra Pradesh",
+  "language_hint": "Telugu",
+  "geography": ["Krishna River", "Godavari delta", "Eastern Ghats", "Bay of Bengal coast", "Nallamala forest"],
+  "occupations": ["aquaculture shrimp farming", "tobacco farming", "rice cultivation", "fishing", "chilli cultivation", "granite quarrying"],
+  "foods": ["gongura pappu", "pesarattu", "pulihora", "gutti vankaya", "Guntur chilli chicken", "bobbatlu"],
+  "festivals": ["Ugadi", "Sankranti", "Dasara", "Tirupati Brahmotsavam"],
+  "units_of_measure": ["guntha (land)", "bag of 80 kg rice", "puti (measure)"],
+  "local_markets": ["Guntur chilli market (Asia's largest)", "Rajahmundry fish market", "Vijayawada wholesale market"],
+  "animals": ["blackbuck", "Indian pangolin", "saltwater crocodile in Coringa", "Olive Ridley turtle", "tiger prawn"],
+  "water_sources": ["Krishna River canals", "Godavari River", "Nagarjunasagar reservoir", "shrimp ponds"],
+  "famous_for": ["Tirupati Venkateswara Temple", "Araku Valley", "Chilika-like Pulicat Lake", "Belum Caves"],
+  "distances": ["Hyderabad to Vijayawada 270 km", "Visakhapatnam to Araku 115 km"],
+  "sample_rewrite_hint": "Use shrimp pond areas, chilli farm distances, Krishna river boat journeys, and rice bag weights."
+}

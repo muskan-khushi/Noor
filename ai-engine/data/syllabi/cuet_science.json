@@ -1,0 +1,22 @@
+{
+  "exam": "CUET",
+  "subject": "Chemistry",
+  "topics": [
+    "Solid State: types of solids, unit cell dimensions, packing efficiency and voids",
+    "Solutions: Raoult's law, colligative properties and van't Hoff factor",
+    "Electrochemistry: Nernst equation, conductance and Kohlrausch's law",
+    "Chemical Kinetics: order of reaction, integrated rate law, Arrhenius equation",
+    "Surface Chemistry: adsorption, colloids, Tyndall effect and coagulation",
+    "p-Block Elements: Group 15, 16, 17 properties and oxoacids",
+    "d and f Block: properties of transition metals, coordination compounds",
+    "Coordination Chemistry: Werner's theory, IUPAC nomenclature, isomerism",
+    "Haloalkanes: SN1 and SN2 mechanisms, stereochemistry",
+    "Alcohols and Phenols: acidic nature, reactions with Na, Lucas test",
+    "Aldehydes and Ketones: nucleophilic addition, Aldol condensation",
+    "Carboxylic Acids and Derivatives: acidity, esterification, amide formation",
+    "Amines: basicity, Hoffmann degradation, diazonium salts",
+    "Biomolecules: carbohydrates, proteins, nucleic acids classification",
+    "Polymers: types, addition and condensation polymers with examples",
+    "Chemistry in Everyday Life: drugs, food additives, cleansing agents"
+  ]
+}

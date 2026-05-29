@@ -1,0 +1,28 @@
+{
+  "exam": "JEE Mains",
+  "subject": "Mathematics",
+  "topics": [
+    "Complex Numbers: polar form, de Moivre's theorem, nth roots of unity",
+    "Argand plane: geometry of complex numbers, rotation formula",
+    "Matrices: Cayley-Hamilton theorem and inverse using adjoint",
+    "Determinants: properties and applications in system of linear equations",
+    "Continuity and Differentiability: intermediate value theorem and Rolle's theorem",
+    "Mean Value Theorem: Lagrange's and Cauchy's forms with applications",
+    "Integration: reduction formulae and integration using partial fractions",
+    "Definite Integrals: properties, Walli's formula, gamma function basics",
+    "Differential Equations: linear differential equations and Bernoulli's equation",
+    "Vectors: scalar triple product and its geometric interpretation, vector triple product",
+    "3D Geometry: angle between lines and planes, shortest distance between skew lines",
+    "Conic Sections: focal chord properties, normals to parabola ellipse and hyperbola",
+    "Probability: Bayes' theorem and total probability theorem with applications",
+    "Random Variables: mean and variance of binomial distribution",
+    "Permutations: circular permutations and permutations with repetition",
+    "Mathematical Induction: strong induction and well-ordering principle",
+    "Binomial Theorem: middle term, term independent of x, greatest term",
+    "Sequences: arithmetic-geometric progression, sum of special series",
+    "Limits: L'Hopital's rule and limits using Taylor series expansion",
+    "Applications of Derivatives: curve sketching, maxima-minima in physical problems",
+    "Area under curves: area between two curves and parametric curves",
+    "Trigonometry: inverse trigonometric identities, solution of equations in given range"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "exam": "JEE Mains",
+  "subject": "Mathematics",
+  "source": "NTA JEE Mains Official Syllabus",
+  "topics": [
+    "Sets, relations and functions: types of relations, equivalence classes, composition of functions, invertible functions",
+    "Complex numbers: Argand plane, modulus and argument, De Moivre's theorem, cube roots of unity",
+    "Matrices and determinants: adjoint and inverse, Cramer's rule, rank of matrix, system of linear equations",
+    "Permutations and combinations: circular permutations, multinomial theorem, division into groups",
+    "Mathematical induction: principle and applications",
+    "Binomial theorem: general term, middle term, binomial coefficients, multinomial expansion",
+    "Sequences and series: arithmetic-geometric mean, sum of special series, telescoping series",
+    "Limits continuity and differentiability: L'Hopital's rule, sandwich theorem, intermediate value theorem",
+    "Application of derivatives: Rolle's theorem, LMVT, rate of change, tangents and normals, approximations",
+    "Indefinite integration: integration by parts, partial fractions, reduction formulae",
+    "Definite integration: properties, Leibniz rule, area under curves",
+    "Differential equations: order and degree, variable separable, homogeneous, linear first order",
+    "Coordinate geometry: conic sections — parabola, ellipse, hyperbola in standard and shifted forms",
+    "3D geometry: direction cosines, lines and planes, skew lines, shortest distance, angle between planes",
+    "Vector algebra: dot and cross products, scalar triple product, vector triple product, coplanarity",
+    "Trigonometric functions: identities, equations, inverse trigonometry, principal values",
+    "Statistics: mean deviation, variance, standard deviation, coefficient of variation",
+    "Probability: Bayes theorem, Bernoulli trials, binomial distribution, Poisson approximation",
+    "Mathematical reasoning: statements, truth tables, tautology, contrapositive",
+    "Linear programming: formulation, graphical method, optimal solutions, feasible region"
+  ]
+}

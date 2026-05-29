@@ -1,0 +1,16 @@
+{
+  "region": "Punjab",
+  "state": "Punjab",
+  "language_hint": "Punjabi",
+  "geography": ["Indo-Gangetic plains", "Sutlej River", "Beas River", "Ravi River", "Shivalik foothills"],
+  "occupations": ["wheat and paddy farming", "dairy farming", "tractor repair", "textile mills", "sports goods manufacturing"],
+  "foods": ["makki di roti sarson da saag", "chole bhature", "lassi", "paratha with butter", "pinni", "gur (jaggery)"],
+  "festivals": ["Baisakhi", "Lohri", "Gurpurab", "Hola Mohalla"],
+  "units_of_measure": ["acre (land)", "quintal (100 kg grain)", "killa (land)", "maund (40 kg)"],
+  "local_markets": ["Ludhiana grain market", "Amritsar Golden Temple bazaar", "Jalandhar sports goods market"],
+  "animals": ["buffalo", "tractor bullocks", "Murrah buffalo", "migratory birds at Harike wetland"],
+  "water_sources": ["canal irrigation network", "tubewell", "Bhakra Nangal dam reservoir"],
+  "famous_for": ["Golden Temple Amritsar", "wheat bowl of India", "Wagah border", "Bhangra dance"],
+  "distances": ["Amritsar to Ludhiana 130 km", "Ludhiana to Chandigarh 95 km"],
+  "sample_rewrite_hint": "Use wheat fields, canal lengths, tractor journeys, quintal weights of grain, and dairy quantities."
+}
