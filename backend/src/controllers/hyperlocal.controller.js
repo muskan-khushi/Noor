@@ -1,9 +1,11 @@
-const HyperContent = require('../models/HyperContent');
+const HyperContent = require('../models/HyperContent.model');
 const aiService = require('../services/aiService');
 
 async function generate(req, res, next) {
   try {
     const { original_text, concept, subject, class_level, region_key } = req.body;
+    if (!original_text || !concept || !subject || !class_level || !region_key)
+      return res.status(400).json({ message: 'original_text, concept, subject, class_level, and region_key are required' });
     const result = await aiService.generateHyperlocal({ original_text, concept, subject, class_level, region_key });
 
     await HyperContent.create({

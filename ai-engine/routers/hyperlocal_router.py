@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from services.hyperlocal_generator import rewrite_with_local_context
-import glob, os
+import glob, os, re
 
 router = APIRouter()
 
@@ -14,6 +14,8 @@ class HyperRequest(BaseModel):
 
 @router.post("/generate")
 def generate_hyperlocal(req: HyperRequest):
+    if not re.match(r'^[a-z_]+$', req.region_key):
+        raise HTTPException(400, 'Invalid region key')
     region_path = f"data/regional_context/{req.region_key}.json"
     if not os.path.exists(region_path):
         raise HTTPException(400, f"Region '{req.region_key}' not found.")

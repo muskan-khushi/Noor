@@ -15,15 +15,14 @@ const GapItemSchema = new mongoose.Schema({
 });
 
 const GapReportSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  stateBoard: String,
-  targetExam: String,
-  subject: String,
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  stateBoard: { type: String, required: true },
+  targetExam: { type: String, required: true },
+  subject: { type: String, required: true },
   totalGapsFound: Number,
   criticalGaps: Number,
   summary: String,
-  gaps: [GapItemSchema],
-  createdAt: { type: Date, default: Date.now }
-});
+  gaps: [GapItemSchema]
+}, { timestamps: true });
 
 module.exports = mongoose.model('GapReport', GapReportSchema);

@@ -1,11 +1,12 @@
 const FormData = require('form-data');
 const fs = require('fs');
-const GapReport = require('../models/GapReport');
+const GapReport = require('../models/GapReport.model');
 const aiService = require('../services/aiService');
 
 async function analyse(req, res, next) {
   try {
     const { board, exam, subject } = req.body;
+    if (!board || !exam || !subject) return res.status(400).json({ message: 'board, exam, and subject are required' });
     const file = req.file;
     if (!file) return res.status(400).json({ message: 'PDF file required' });
 
@@ -16,8 +17,14 @@ async function analyse(req, res, next) {
     form.append('exam', exam);
     form.append('subject', subject);
 
-    const aiResult = await aiService.analyseGap(form, form.getHeaders());
-    fs.unlinkSync(file.path);
+    let aiResult;
+    try {
+      aiResult = await aiService.analyseGap(form, form.getHeaders());
+    } finally {
+      fs.unlinkSync(file.path);
+    }
+
+    if (!aiResult) return res.status(502).json({ message: 'No response from AI service' });
 
     // Save to MongoDB
     const report = await GapReport.create({

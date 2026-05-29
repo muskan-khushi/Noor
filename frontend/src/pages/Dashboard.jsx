@@ -3,16 +3,22 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getReports } from '../api/gapFinder';
 import { getHistory } from '../api/hyperlocalGen';
+import Loader from '../components/common/Loader';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [reports, setReports]   = useState([]);
   const [history, setHistory]   = useState([]);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    getReports().then(setReports).catch(() => {});
-    getHistory().then(setHistory).catch(() => {});
+    Promise.all([
+      getReports().then(setReports).catch(err => console.error('Failed to load data:', err)),
+      getHistory().then(setHistory).catch(err => console.error('Failed to load data:', err)),
+    ]).finally(() => setLoading(false));
   }, []);
+
+  if (loading) return <Loader message="Loading your dashboard…" />;
 
   return (
     <div className="page container">
@@ -73,7 +79,7 @@ export default function Dashboard() {
                   <span style={{ background:'#fff7ed', color:'#c2410c', padding:'2px 10px', borderRadius:999, fontSize:12, fontWeight:700 }}>{h.region}</span>
                   <span style={{ background:'#f1f5f9', color:'#475569', padding:'2px 10px', borderRadius:999, fontSize:12, fontWeight:600 }}>{h.subject}</span>
                 </div>
-                <p style={{ fontSize:14, color:'#64748b', fontStyle:'italic' }}>{h.original_text?.slice(0,120)}…</p>
+                <p style={{ fontSize:14, color:'#64748b', fontStyle:'italic' }}>{h.original_text?.slice(0,120)}{h.original_text?.length > 120 ? '…' : ''}</p>
               </div>
             ))}
           </div>

@@ -1,10 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-import shutil, os, json, tempfile
+import shutil, os, json, tempfile, logging
 from services.pdf_parser import extract_text_from_pdf
 from services.chunker import chunk_syllabus
 from services.embedder import embed_chunks, load_or_compute_syllabus_embeddings
 from services.similarity import find_gaps
 from services.gap_generator import generate_gap_module
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -51,11 +53,16 @@ async def analyse_gap(
         gaps = find_gaps(state_chunks, state_embeddings, national_chunks, national_embeddings)
 
         # 4. Generate study modules for CRITICAL gaps (max 5 for speed)
+        module_count = 0
         for gap in gaps:
             if gap['priority'] == 'CRITICAL':
+                if module_count >= 5:
+                    continue
                 try:
                     gap['studyModule'] = generate_gap_module(gap['topic'], exam, subject)
-                except Exception:
+                    module_count += 1
+                except Exception as e:
+                    logger.error(f'Failed to generate module for {gap["topic"]}: {e}')
                     gap['studyModule'] = None
 
         critical = sum(1 for g in gaps if g['priority'] == 'CRITICAL')
@@ -73,9 +80,3 @@ async def analyse_gap(
         }
     finally:
         os.unlink(tmp_path)
-
-@router.get("/regions")
-def get_regions():
-    import glob
-    files = glob.glob("data/regional_context/*.json")
-    return {"regions": [os.path.basename(f).replace(".json","") for f in files]}

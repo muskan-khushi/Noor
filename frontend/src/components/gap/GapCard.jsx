@@ -13,11 +13,11 @@ export default function GapCard({ gap }) {
       <div style={{ padding:'16px 20px', cursor:'pointer' }} onClick={() => setOpen(!open)}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
           <span style={{ display:'inline-block', padding:'2px 10px', borderRadius:999, fontSize:12, fontWeight:700, textTransform:'uppercase', background:BG[p], color:COLORS[p] }}>{p}</span>
-          <span style={{ fontSize:12, color:'#64748b', fontWeight:600 }}>Similarity: {(gap.similarity_score*100).toFixed(0)}%</span>
+          <span style={{ fontSize:12, color:'#64748b', fontWeight:600 }}>Similarity: {((gap.similarity_score || 0)*100).toFixed(0)}%</span>
         </div>
         <h3 style={{ fontSize:15, fontWeight:700, marginBottom:6, lineHeight:1.4 }}>{gap.topic}</h3>
         <p style={{ fontSize:13, color:'#64748b', marginBottom:10 }}>
-          Closest match in your syllabus: <em>{gap.closest_state_topic?.slice(0,100)}…</em>
+          Closest match in your syllabus: <em>{gap.closest_state_topic?.slice(0,100)}{gap.closest_state_topic?.length > 100 ? '…' : ''}</em>
         </p>
         <span style={{ fontSize:13, color:'#f97316', fontWeight:600 }}>
           {open ? '▲ Hide Study Module' : '▼ View Study Module'}

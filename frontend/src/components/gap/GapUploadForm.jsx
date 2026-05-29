@@ -27,7 +27,13 @@ export default function GapUploadForm({ onResult }) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept:{'application/pdf':['.pdf']}, maxFiles:1,
-    onDrop: files => { setFile(files[0]); setError(''); },
+    maxSize: 10 * 1024 * 1024,
+    onDrop: files => { if (files.length) { setFile(files[0]); setError(''); } },
+    onDropRejected: (rejections) => {
+      const err = rejections[0]?.errors?.[0];
+      if (err?.code === 'file-too-large') setError('File is too large. Maximum size is 10MB.');
+      else setError(err?.message || 'File rejected. Please upload a valid PDF under 10MB.');
+    },
   });
 
   const handleSubmit = async () => {

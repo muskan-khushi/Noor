@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+
+const api = axios.create({ baseURL: process.env.REACT_APP_API_URL });
 
 const AuthContext = createContext(null);
 
@@ -10,26 +12,28 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      axios.get(`${process.env.REACT_APP_API_URL}/api/auth/me`)
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.get('/api/auth/me')
         .then(res => setUser(res.data))
         .catch(() => logout())
         .finally(() => setLoading(false));
     } else { setLoading(false); }
-  }, [token]);
+  }, [token, logout]);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('noor_token');
+    delete api.defaults.headers.common['Authorization'];
+    setToken(null); setUser(null);
+  }, []);
 
   const login = (tok, userData) => {
     localStorage.setItem('noor_token', tok);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${tok}`;
+    api.defaults.headers.common['Authorization'] = `Bearer ${tok}`;
     setToken(tok); setUser(userData);
-  };
-  const logout = () => {
-    localStorage.removeItem('noor_token');
-    delete axios.defaults.headers.common['Authorization'];
-    setToken(null); setUser(null);
   };
 
   return <AuthContext.Provider value={{ user, token, login, logout, loading }}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => useContext(AuthContext);
+export { api };

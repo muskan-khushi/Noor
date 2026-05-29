@@ -1,6 +1,7 @@
 # Uses Groq (free) via OpenAI-compatible client
 from openai import OpenAI
 import json
+import re
 from config import settings
 
 client = OpenAI(
@@ -27,8 +28,26 @@ Respond ONLY with valid JSON. No preamble. No markdown fences.'''
         model=settings.MODEL_NAME,
         messages=[{'role': 'user', 'content': prompt}],
         temperature=0.3,
-        max_tokens=800
+        max_tokens=800,
+        timeout=30  # 30 second timeout for resilience
     )
     raw = response.choices[0].message.content.strip()
     raw = raw.replace('```json', '').replace('```', '').strip()
-    return json.loads(raw)
+
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        # Try to extract JSON object from the response using regex
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+        # Complete fallback
+        return {
+            'explanation': raw,
+            'example_problem': '',
+            'solution': '',
+            'common_mistake': ''
+        }

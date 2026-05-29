@@ -7,7 +7,7 @@ sys.path.append('.')
 from services.embedder import load_or_compute_syllabus_embeddings
 import json
 
-syllabi = ['neet_chemistry', 'neet_physics', 'jee_maths']
+syllabi = ['neet_chemistry', 'neet_physics', 'jee_maths', 'cuet_science']
 
 for key in syllabi:
     path = f'data/syllabi/{key}.json'

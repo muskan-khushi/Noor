@@ -22,6 +22,7 @@ function App() {
           <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/gap-finder"  element={<ProtectedRoute><GapFinderPage /></ProtectedRoute>} />
           <Route path="/hyperlocal"  element={<ProtectedRoute><HyperLocalPage /></ProtectedRoute>} />
+          <Route path="*" element={<div style={{textAlign:'center',padding:'100px 20px'}}><h1>404</h1><p>Page not found</p><a href="/">Go home</a></div>} />
         </Routes>
       </Router>
     </AuthProvider>

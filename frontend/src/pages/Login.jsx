@@ -12,7 +12,11 @@ export default function Login() {
   const { login } = useAuth();
   const navigate  = useNavigate();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (loading) return;
+    if (!/\S+@\S+\.\S+/.test(email)) { setError('Please enter a valid email.'); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setLoad(true); setError('');
     try {
       const { token, user } = await loginAPI({ email, password });
@@ -28,23 +32,23 @@ export default function Login() {
       <div className="card" style={{ width:'100%', maxWidth:420 }}>
         <h2 style={{ fontSize:26, fontWeight:800, marginBottom:4 }}>Welcome back</h2>
         <p style={{ color:'#64748b', marginBottom:24 }}>Log in to continue your preparation</p>
-        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+        <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
           <div className="form-group">
             <label>Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" value={password} onChange={e => setPw(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key==='Enter' && handleSubmit()} />
+            <input type="password" value={password} onChange={e => setPw(e.target.value)} placeholder="••••••••" />
           </div>
           <ErrorBanner message={error} />
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
+          <button className="btn btn-primary" type="submit" disabled={loading}>
             {loading ? 'Logging in…' : 'Log In →'}
           </button>
           <p style={{ textAlign:'center', fontSize:14, color:'#64748b' }}>
             No account? <Link to="/register" style={{ color:'#f97316', fontWeight:600 }}>Register free</Link>
           </p>
-        </div>
+        </form>
       </div>
     </div>
   );

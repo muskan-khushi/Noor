@@ -5,7 +5,8 @@ const FILTERS = ['ALL','CRITICAL','HIGH','MEDIUM'];
 
 export default function GapReport({ data, onReset }) {
   const [filter, setFilter] = useState('ALL');
-  const shown = filter === 'ALL' ? data.gaps : data.gaps.filter(g => g.priority === filter);
+  const gaps = data.gaps || [];
+  const shown = filter === 'ALL' ? gaps : gaps.filter(g => g.priority === filter);
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
@@ -19,9 +20,9 @@ export default function GapReport({ data, onReset }) {
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
         {[
-          { num:data.criticalGaps, label:'Critical Gaps',  bg:'#fee2e2' },
-          { num:data.highGaps||0,  label:'High Priority',  bg:'#fef3c7' },
-          { num:data.totalGapsFound, label:'Total Gaps',   bg:'#dbeafe' },
+          { num:data.criticalGaps || 0, label:'Critical Gaps',  bg:'#fee2e2' },
+          { num:data.highGaps||0,        label:'High Priority',  bg:'#fef3c7' },
+          { num:data.totalGapsFound || 0, label:'Total Gaps',     bg:'#dbeafe' },
         ].map(({ num, label, bg }) => (
           <div key={label} style={{ background:bg, borderRadius:12, padding:'20px', textAlign:'center' }}>
             <div style={{ fontSize:38, fontWeight:800 }}>{num}</div>
@@ -44,7 +45,7 @@ export default function GapReport({ data, onReset }) {
       <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
         {shown.length === 0
           ? <p style={{ color:'#64748b', textAlign:'center', padding:32 }}>No gaps found for this filter.</p>
-          : shown.map((gap, i) => <GapCard key={i} gap={gap} />)}
+          : shown.map((gap, i) => <GapCard key={gap.topic + '-' + i} gap={gap} />)}
       </div>
     </div>
   );

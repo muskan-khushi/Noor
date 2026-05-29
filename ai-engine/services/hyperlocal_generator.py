@@ -1,5 +1,6 @@
 from openai import OpenAI
 import json
+import re
 import os
 from config import settings
 
@@ -21,15 +22,21 @@ def rewrite_with_local_context(
     region_key: str
 ) -> dict:
     context = load_regional_context(region_key)
-    context_summary = f"""Region: {context['region']}
-Local occupations: {', '.join(context['occupations'][:4])}
-Local foods: {', '.join(context['foods'][:4])}
-Local festivals: {', '.join(context['festivals'][:3])}
-Local geography: {', '.join(context['geography'][:3])}"""
+    region_name = context.get('region', region_key)
+    occupations = context.get('occupations', [])[:4]
+    foods = context.get('foods', [])[:4]
+    festivals = context.get('festivals', [])[:3]
+    geography = context.get('geography', [])[:3]
+
+    context_summary = f"""Region: {region_name}
+Local occupations: {', '.join(occupations)}
+Local foods: {', '.join(foods)}
+Local festivals: {', '.join(festivals)}
+Local geography: {', '.join(geography)}"""
 
     prompt = f'''You are an expert Indian educator making textbook content relevant for local students.
 
-The student is in Class {class_level} studying {subject} and lives in {context['region']}.
+The student is in Class {class_level} studying {subject} and lives in {region_name}.
 
 ORIGINAL TEXTBOOK TEXT:
 {original_text}
@@ -37,7 +44,7 @@ ORIGINAL TEXTBOOK TEXT:
 LOCAL CONTEXT FOR THIS STUDENT:
 {context_summary}
 
-Rewrite the above text so that all examples, names, locations, and objects are replaced with things from {context['region']}.
+Rewrite the above text so that all examples, names, locations, and objects are replaced with things from {region_name}.
 Keep the mathematical/scientific content IDENTICAL. Only the cultural wrapping changes.
 
 Respond in JSON with these exact keys:
@@ -55,7 +62,28 @@ Respond ONLY with valid JSON. No markdown.'''
     )
     raw = response.choices[0].message.content.strip()
     raw = raw.replace('```json', '').replace('```', '').strip()
-    result = json.loads(raw)
+
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError:
+        # Try to extract JSON object from the response using regex
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            try:
+                result = json.loads(match.group())
+            except json.JSONDecodeError:
+                result = {
+                    'rewritten_text': raw,
+                    'region': region_name,
+                    'why_this_helps': 'Content was rewritten with local context.'
+                }
+        else:
+            result = {
+                'rewritten_text': raw,
+                'region': region_name,
+                'why_this_helps': 'Content was rewritten with local context.'
+            }
+
     result['original_text'] = original_text
-    result['region'] = context['region']
+    result['region'] = region_name
     return result

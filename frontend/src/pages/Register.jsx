@@ -17,10 +17,12 @@ export default function Register() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const handleSubmit = async () => {
-    if (!form.name || !form.email || !form.password || !form.stateBoard || !form.district) {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.password || !form.stateBoard || !form.district || !form.targetExam) {
       setError('Please fill all required fields.'); return;
     }
+    if (form.password.length < 6) { setError('Password must be at least 6 characters'); return; }
     setLoad(true); setError('');
     try {
       const { token, user } = await registerAPI(form);
@@ -43,7 +45,7 @@ export default function Register() {
       <div className="card" style={{ width:'100%', maxWidth:520 }}>
         <h2 style={{ fontSize:26, fontWeight:800, marginBottom:4 }}>Create your account</h2>
         <p style={{ color:'#64748b', marginBottom:24 }}>Free for all students</p>
-        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+        <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
           {field('Full Name','name','text','Priya Sharma')}
           {field('Email','email','email','you@example.com')}
           {field('Password','password','password','Min 6 characters')}
@@ -71,13 +73,13 @@ export default function Register() {
           </div>
           {field('District / City','district','text','e.g. Jodhpur')}
           <ErrorBanner message={error} />
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
+          <button className="btn btn-primary" type="submit" disabled={loading}>
             {loading ? 'Creating account…' : 'Create Account →'}
           </button>
           <p style={{ textAlign:'center', fontSize:14, color:'#64748b' }}>
             Already have an account? <Link to="/login" style={{ color:'#f97316', fontWeight:600 }}>Log in</Link>
           </p>
-        </div>
+        </form>
       </div>
     </div>
   );

@@ -1,10 +1,5 @@
 version: '3.9'
 services:
-  mongo:
-    image: mongo:7
-    ports: ["27017:27017"]
-    volumes: [mongo_data:/data/db]
-
   ai-engine:
     build: ./ai-engine
     ports: ["8000:8000"]
@@ -17,18 +12,18 @@ services:
     build: ./backend
     ports: ["5000:5000"]
     env_file: ./backend/.env
-    depends_on: [mongo, ai-engine]
+    depends_on: [ai-engine]
     volumes: ["./backend:/app"]
     working_dir: /app
     command: npm run dev
+    environment:
+      - AI_ENGINE_URL=http://ai-engine:8000
 
   frontend:
     build: ./frontend
     ports: ["3000:3000"]
+    env_file: ./frontend/.env
     depends_on: [backend]
     volumes: ["./frontend:/app"]
     working_dir: /app
     command: npm start
-
-volumes:
-  mongo_data:

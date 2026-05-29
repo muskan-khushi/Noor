@@ -14,9 +14,11 @@ def find_gaps(
     national_chunks: List[str],
     national_embeddings: np.ndarray
 ) -> List[Dict]:
+    if len(state_embeddings) == 0 or len(national_embeddings) == 0:
+        return []
     sim_matrix = cosine_similarity(national_embeddings, state_embeddings)
     gaps = []
-    for i, (nat_chunk, scores) in enumerate(zip(national_chunks, sim_matrix)):
+    for nat_chunk, scores in zip(national_chunks, sim_matrix):
         best_score = float(np.max(scores))
         best_match_idx = int(np.argmax(scores))
         if best_score < settings.GAP_THRESHOLD:

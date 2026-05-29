@@ -29,7 +29,7 @@ export default function Landing() {
           </p>
           <div style={{ display:'flex', gap:16, justifyContent:'center', flexWrap:'wrap' }}>
             <Link to="/register" className="btn btn-primary btn-lg" style={{ background:'#fff', color:'#f97316' }}>Get Started — Free</Link>
-            <Link to="/gap-finder" className="btn btn-lg" style={{ border:'2px solid rgba(255,255,255,0.4)', color:'#fff', background:'transparent' }}>See a Demo →</Link>
+            <Link to="/register" className="btn btn-lg" style={{ border:'2px solid rgba(255,255,255,0.4)', color:'#fff', background:'transparent' }}>See a Demo →</Link>
           </div>
         </div>
       </section>
