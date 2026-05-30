@@ -250,8 +250,7 @@ def clean_extracted_text(raw: str) -> str:
     Pass 2: Fix common OCR errors in scientific text
     Pass 3: Normalise whitespace while preserving structure
     Pass 4: Remove non-content lines (page numbers, headers, watermarks)
-    Pass 5: Reconnect hyphenated line breaks (common in PDFs)
-    """
+c    """
     if not raw:
         raise ValueError("No text was extracted from PDF")
 
