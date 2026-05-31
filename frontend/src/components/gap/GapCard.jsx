@@ -1,176 +1,141 @@
 import React, { useState } from 'react';
 import GapModule from './GapModule';
 
-const PRIORITY_STYLES = {
-  CRITICAL: { bg: '#fee2e2', text: '#b91c1c', border: '#ef4444', leftBar: '#dc2626' },
-  HIGH:     { bg: '#fef3c7', text: '#92400e', border: '#f59e0b', leftBar: '#d97706' },
-  MEDIUM:   { bg: '#dbeafe', text: '#1d4ed8', border: '#60a5fa', leftBar: '#2563eb' },
+const P_STYLE = {
+  CRITICAL: { bar: '#dc2626', badge: 'badge-critical', bg: 'rgba(255,100,100,0.05)' },
+  HIGH:     { bar: '#d97706', badge: 'badge-high',     bg: 'rgba(255,200,100,0.04)' },
+  MEDIUM:   { bar: '#2563eb', badge: 'badge-medium',   bg: 'rgba(140,180,255,0.04)' },
 };
 
-// Mini bar showing three signal scores
-function SignalBreakdown({ signals }) {
-  if (!signals) return null;
-  const bars = [
-    { label: 'Dense',  key: 'dense_cosine',  color: '#8b5cf6', help: 'Semantic embedding similarity' },
-    { label: 'Lexical', key: 'bm25_lexical', color: '#0ea5e9', help: 'BM25 keyword overlap' },
-    { label: 'N-gram', key: 'ngram_jaccard', color: '#f97316', help: 'Character bigram Jaccard' },
-  ];
+/* Three signal mini-bars */
+function SignalBars({ s }) {
+  if (!s) return null;
   return (
-    <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-      {bars.map(({ label, key, color, help }) => {
-        const val = signals[key] || 0;
-        return (
-          <div key={key} title={help} style={{ flex: 1 }}>
-            <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 3 }}>{label}</div>
-            <div style={{ background: '#f1f5f9', borderRadius: 3, height: 6, overflow: 'hidden' }}>
-              <div style={{
-                width: `${(val * 100).toFixed(0)}%`, height: '100%',
-                background: color, borderRadius: 3,
-                transition: 'width 0.5s ease',
-              }} />
-            </div>
-            <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>{(val * 100).toFixed(0)}%</div>
+    <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+      {[
+        { label: 'Semantic', val: s.dense_cosine,  color: '#D4B8FF' },
+        { label: 'Lexical',  val: s.bm25_lexical,  color: '#B8D4FF' },
+        { label: 'N-gram',   val: s.ngram_jaccard, color: '#FFD4B8' },
+      ].map(({ label, val, color }) => (
+        <div key={label} title={`${label}: ${Math.round((val||0)*100)}%`} style={{ flex: 1 }}>
+          <div style={{ fontSize: 9.5, color: 'rgba(255,248,240,0.28)', marginBottom: 3,
+            textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600 }}>{label}</div>
+          <div style={{ height: 3, background: 'rgba(255,248,240,0.07)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{
+              width: `${Math.round((val||0)*100)}%`, height: '100%',
+              background: `linear-gradient(90deg, ${color}70, ${color})`,
+              borderRadius: 99, transition: 'width 0.6s ease',
+            }} />
           </div>
-        );
-      })}
+          <div style={{ fontSize: 9.5, color: 'rgba(255,248,240,0.28)', marginTop: 2 }}>
+            {Math.round((val||0)*100)}%
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-// Confidence interval indicator
-function ConfidenceBar({ ci, fused }) {
+/* Confidence pill */
+function ConfidencePill({ ci }) {
   if (!ci || ci.length < 2) return null;
-  const [low, high] = ci;
-  const range = high - low;
-  const isNarrow = range < 0.10;
+  const narrow = (ci[1] - ci[0]) < 0.10;
   return (
-    <span title={`95% CI: [${(low*100).toFixed(0)}%, ${(high*100).toFixed(0)}%]`}
+    <span title={`95% CI: [${Math.round(ci[0]*100)}%, ${Math.round(ci[1]*100)}%]`}
       style={{
-        fontSize: 11, fontWeight: 600,
-        color: isNarrow ? '#22c55e' : '#f59e0b',
-        marginLeft: 8,
-        cursor: 'help',
+        fontSize: 10.5, fontWeight: 600, cursor: 'help',
+        color: narrow ? '#B8FFE8' : '#FFE8B8',
       }}>
-      {isNarrow ? '● High confidence' : '◐ Borderline'}
-    </span>
-  );
-}
-
-// Exam frequency badge
-function FrequencyBadge({ frequency }) {
-  if (!frequency) return null;
-  const pct = Math.round(frequency * 100);
-  const color = pct >= 90 ? '#dc2626' : pct >= 80 ? '#d97706' : '#6b7280';
-  return (
-    <span title={`Appears in ~${pct}% of recent ${'"'}exam${'"'} papers`}
-      style={{ fontSize: 11, color, fontWeight: 600, marginLeft: 8 }}>
-      📊 {pct}% exam freq
+      {narrow ? '● high confidence' : '◐ borderline'}
     </span>
   );
 }
 
 export default function GapCard({ gap }) {
   const [open, setOpen] = useState(false);
-  const p = gap.priority || 'MEDIUM';
-  const styles = PRIORITY_STYLES[p] || PRIORITY_STYLES.MEDIUM;
-
-  const hasModule = !!gap.studyModule;
-  const compositeScore = gap.composite_priority
-    ? `${(gap.composite_priority * 100).toFixed(0)}`
-    : null;
+  const p = P_STYLE[gap.priority] || P_STYLE.MEDIUM;
 
   return (
     <div style={{
-      background: '#fff',
-      borderRadius: 12,
-      border: '1.5px solid #e2e8f0',
-      borderLeft: `4px solid ${styles.leftBar}`,
-      overflow: 'hidden',
-      transition: 'box-shadow 0.15s',
-    }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
-    >
-      {/* Card header */}
-      <div style={{ padding: '16px 20px', cursor: 'pointer' }} onClick={() => setOpen(!open)}>
-
-        {/* Top row: badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-          <span style={{
-            display: 'inline-block', padding: '2px 10px',
-            borderRadius: 999, fontSize: 11, fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: '0.04em',
-            background: styles.bg, color: styles.text,
-          }}>{p}</span>
-
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
-            Match: {((gap.fused_score || gap.similarity_score || 0) * 100).toFixed(0)}%
+      borderRadius: 16, overflow: 'hidden',
+      border: '1px solid rgba(255,212,184,0.09)',
+      borderLeft: `3px solid ${p.bar}`,
+      background: open ? p.bg : 'rgba(255,248,240,0.02)',
+      transition: 'all 0.20s ease',
+    }}>
+      {/* Header row — clickable */}
+      <div
+        style={{ padding: '16px 20px', cursor: 'pointer' }}
+        onClick={() => setOpen(o => !o)}
+      >
+        {/* Badge row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8, flexWrap: 'wrap' }}>
+          <span className={`badge ${p.badge}`}>{gap.priority}</span>
+          <span style={{ fontSize: 11.5, color: 'rgba(255,248,240,0.38)', fontWeight: 500 }}>
+            Match {Math.round(((gap.fused_score||gap.similarity_score)||0)*100)}%
           </span>
-
-          <ConfidenceBar ci={gap.confidence_interval} fused={gap.fused_score} />
-          <FrequencyBadge frequency={gap.exam_frequency} />
-
-          {compositeScore && (
-            <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 'auto' }}>
-              Priority score: {compositeScore}
+          <ConfidencePill ci={gap.confidence_interval} />
+          {gap.exam_frequency && (
+            <span style={{ fontSize: 11, color: 'rgba(255,248,240,0.28)' }}>
+              · {Math.round(gap.exam_frequency*100)}% exam freq
+            </span>
+          )}
+          {gap.composite_priority && (
+            <span style={{ fontSize: 10.5, color: 'rgba(255,248,240,0.22)', marginLeft: 'auto' }}>
+              Priority score {Math.round(gap.composite_priority*100)}
             </span>
           )}
         </div>
 
         {/* Topic */}
-        <h3 style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.4, marginBottom: 8, color: '#1e293b' }}>
-          {gap.topic}
-        </h3>
+        <h3 style={{
+          fontSize: 14, fontWeight: 500,
+          color: 'rgba(255,248,240,0.84)', lineHeight: 1.5, marginBottom: 6,
+        }}>{gap.topic}</h3>
 
         {/* Closest state match */}
         {gap.closest_state_topic && (
-          <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
+          <p style={{ fontSize: 11.5, color: 'rgba(255,248,240,0.28)', marginBottom: 4, lineHeight: 1.5 }}>
             Closest in your syllabus:{' '}
-            <em style={{ color: '#64748b' }}>
-              {gap.closest_state_topic.slice(0, 120)}
-              {gap.closest_state_topic.length > 120 ? '…' : ''}
+            <em style={{ color: 'rgba(255,248,240,0.38)' }}>
+              {gap.closest_state_topic.slice(0, 110)}{gap.closest_state_topic.length > 110 ? '…' : ''}
             </em>
           </p>
         )}
 
-        {/* Signal breakdown */}
-        {gap.signal_breakdown && (
-          <SignalBreakdown signals={gap.signal_breakdown} />
-        )}
+        <SignalBars s={gap.signal_breakdown} />
 
-        {/* Expand/collapse */}
-        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, color: '#f97316', fontWeight: 600 }}>
+        {/* Expand toggle */}
+        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 7 }}>
+          <span style={{ fontSize: 12.5, color: '#FFD4B8', fontWeight: 500 }}>
             {open
-              ? '▲ Hide Study Module'
-              : hasModule
-                ? '▼ View AI-Generated Study Module'
-                : '▼ View Details'
+              ? '▲ Collapse'
+              : gap.studyModule ? '▼ View study module' : '▼ View details'
             }
           </span>
-          {hasModule && (
+          {gap.studyModule && (
             <span style={{
-              background: '#f97316', color: '#fff',
-              fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
-              textTransform: 'uppercase', letterSpacing: '0.04em',
+              background: '#FFD4B8', color: '#1A0F2E',
+              fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4,
+              textTransform: 'uppercase', letterSpacing: '0.05em',
             }}>AI Module</span>
           )}
         </div>
       </div>
 
-      {/* Expanded: study module or message */}
+      {/* Expanded content */}
       {open && (
-        hasModule
-          ? <GapModule module={gap.studyModule} />
+        gap.studyModule
+          ? <GapModule module={gap.studyModule} accentColor={p.bar} />
           : (
             <div style={{
-              padding: '12px 20px', borderTop: '1px solid #e2e8f0',
-              background: '#f8fafc', color: '#64748b', fontSize: 14,
+              borderTop: '1px solid rgba(255,212,184,0.08)',
+              padding: '13px 20px', fontSize: 13,
+              color: 'rgba(255,248,240,0.34)', fontWeight: 300, lineHeight: 1.7,
             }}>
-              {p === 'CRITICAL'
-                ? 'AI study module could not be generated for this gap. Try the Hyperlocal Generator to get a localised explanation of this concept.'
-                : `Study modules are auto-generated for CRITICAL gaps only. This is a ${p} priority gap — address it after completing CRITICAL topics.`
-              }
+              {gap.priority === 'CRITICAL'
+                ? 'Study module generation failed for this gap. Use the Hyperlocal Generator to get an explanation in your regional context.'
+                : `Study modules are auto-generated for CRITICAL gaps only. Tackle CRITICAL topics first, then return to ${gap.priority.toLowerCase()} priority gaps.`}
             </div>
           )
       )}

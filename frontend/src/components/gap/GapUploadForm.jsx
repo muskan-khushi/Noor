@@ -4,47 +4,47 @@ import { analyseGap } from '../../api/gapFinder';
 import Loader from '../common/Loader';
 import ErrorBanner from '../common/ErrorBanner';
 
-const STATE_BOARDS = ['Maharashtra','Tamil Nadu','Rajasthan','Kerala','Punjab','West Bengal','Andhra Pradesh','Karnataka','Gujarat','Uttar Pradesh'];
+const STATE_BOARDS  = ['Maharashtra','Tamil Nadu','Rajasthan','Kerala','Punjab','West Bengal','Andhra Pradesh','Karnataka','Gujarat','Uttar Pradesh'];
 const NATIONAL_EXAMS = ['NEET','JEE Mains','CUET'];
-const SUBJECTS = { NEET:['Chemistry','Physics','Biology'], 'JEE Mains':['Mathematics','Chemistry','Physics'], CUET:['Chemistry'] };
-
-const cs = {
-  form: { display:'flex', flexDirection:'column', gap:20 },
-  dropzone: { border:'2px dashed #e2e8f0', borderRadius:12, padding:'40px 24px', textAlign:'center', cursor:'pointer', transition:'all 0.2s', background:'#fafafa' },
-  dropzoneActive: { borderColor:'#f97316', background:'#fff7ed' },
-  dropzoneDone: { borderColor:'#22c55e', background:'#f0fdf4' },
-  icon: { fontSize:32, marginBottom:8 },
-  row: { display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:16 },
+const SUBJECTS = {
+  'NEET':      ['Chemistry','Physics','Biology'],
+  'JEE Mains': ['Mathematics','Chemistry','Physics'],
+  'CUET':      ['Chemistry'],
 };
 
 export default function GapUploadForm({ onResult }) {
-  const [file,setFile]       = useState(null);
-  const [board,setBoard]     = useState('');
-  const [exam,setExam]       = useState('');
-  const [subject,setSubject] = useState('');
-  const [maxModules,setMaxModules] = useState('5');
-  const [loading,setLoading] = useState(false);
-  const [error,setError]     = useState('');
+  const [file, setFile]       = useState(null);
+  const [board, setBoard]     = useState('');
+  const [exam, setExam]       = useState('');
+  const [subject, setSubject] = useState('');
+  const [maxMods, setMaxMods] = useState('5');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept:{'application/pdf':['.pdf']}, maxFiles:1,
+    accept: { 'application/pdf': ['.pdf'] },
+    maxFiles: 1,
     maxSize: 10 * 1024 * 1024,
     onDrop: files => { if (files.length) { setFile(files[0]); setError(''); } },
-    onDropRejected: (rejections) => {
-      const err = rejections[0]?.errors?.[0];
-      if (err?.code === 'file-too-large') setError('File is too large. Maximum size is 10MB.');
-      else setError(err?.message || 'File rejected. Please upload a valid PDF under 10MB.');
+    onDropRejected: rej => {
+      const code = rej[0]?.errors?.[0]?.code;
+      setError(code === 'file-too-large' ? 'File too large — max 10 MB.' : 'Only PDF files are accepted.');
     },
   });
 
   const handleSubmit = async () => {
-    if (!file || !board || !exam || !subject) { setError('Please fill all fields and upload your syllabus PDF.'); return; }
+    if (!file || !board || !exam || !subject) {
+      setError('Please fill all fields and upload your syllabus PDF.');
+      return;
+    }
     setLoading(true); setError('');
     try {
       const fd = new FormData();
-      fd.append('syllabus', file); fd.append('board', board);
-      fd.append('exam', exam);     fd.append('subject', subject);
-      fd.append('max_module_generation', maxModules);
+      fd.append('syllabus', file);
+      fd.append('board',    board);
+      fd.append('exam',     exam);
+      fd.append('subject',  subject);
+      fd.append('max_module_generation', maxMods);
       const result = await analyseGap(fd);
       onResult(result);
     } catch (err) {
@@ -52,41 +52,103 @@ export default function GapUploadForm({ onResult }) {
     } finally { setLoading(false); }
   };
 
-  if (loading) return <Loader message="Analysing your syllabus against national exam topics… this takes ~30 seconds" />;
+  if (loading) return (
+    <Loader message="Analysing your syllabus against national exam topics… comparing with 3-signal semantic alignment. This takes ~30 seconds." />
+  );
 
-  const dzStyle = { ...cs.dropzone, ...(isDragActive ? cs.dropzoneActive : {}), ...(file ? cs.dropzoneDone : {}) };
+  const dropStyle = {
+    border: `2px dashed ${isDragActive ? '#FFB5C8' : file ? '#B8FFE8' : 'rgba(255,212,184,0.22)'}`,
+    borderRadius: 16,
+    padding: '38px 24px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    background: isDragActive ? 'rgba(255,181,200,0.06)' : file ? 'rgba(184,255,232,0.04)' : 'rgba(255,248,240,0.02)',
+    transition: 'all 0.22s ease',
+    marginBottom: 24,
+  };
+
   return (
-    <div style={cs.form}>
-      <div {...getRootProps()} style={dzStyle}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* Drop zone */}
+      <div {...getRootProps()} style={dropStyle}>
         <input {...getInputProps()} />
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
-          <span style={cs.icon}>{file ? '✅' : '📄'}</span>
-          {file ? <span style={{ fontWeight:600 }}>{file.name}</span>
-                : <span>Drop your <strong>state board syllabus PDF</strong> here<br /><small style={{ color:'#64748b' }}>or click to browse — PDF only, max 10MB</small></span>}
+        <div style={{
+          fontSize: 28, marginBottom: 10,
+          filter: `drop-shadow(0 0 10px ${file ? '#B8FFE8' : '#FFD4B8'}60)`,
+        }}>
+          {file ? '✦' : '◈'}
         </div>
+        {file ? (
+          <>
+            <p style={{ fontSize: 13.5, fontWeight: 500, color: '#B8FFE8', marginBottom: 4 }}>{file.name}</p>
+            <p style={{ fontSize: 12, color: 'rgba(255,248,240,0.30)' }}>Click to change file</p>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 14, color: 'rgba(255,248,240,0.58)', marginBottom: 5 }}>
+              Drop your <strong style={{ color: '#FFD4B8' }}>syllabus PDF</strong> here
+            </p>
+            <p style={{ fontSize: 12, color: 'rgba(255,248,240,0.28)' }}>or click to browse · PDF only · max 10 MB</p>
+          </>
+        )}
       </div>
 
-      <div style={cs.row}>
-        {[
-          { label:'State Board', value:board, set:setBoard, opts:STATE_BOARDS, placeholder:'Select board…' },
-          { label:'Target Exam', value:exam, set:(v)=>{ setExam(v); setSubject(''); }, opts:NATIONAL_EXAMS, placeholder:'Select exam…' },
-          { label:'Subject', value:subject, set:setSubject, opts:SUBJECTS[exam]||[], placeholder:'Select subject…', disabled:!exam },
-          { label:'Max Modules', value:maxModules, set:setMaxModules, opts:['1','2','3','4','5','6','7','8','9','10'], placeholder:'Select modules…' },
-        ].map(({ label, value, set, opts, placeholder, disabled }) => (
-          <div className="form-group" key={label}>
-            <label>{label}</label>
-            <select value={value} onChange={e => set(e.target.value)} disabled={disabled}>
-              <option value="">{placeholder}</option>
-              {opts.map(o => <option key={o}>{o}</option>)}
-            </select>
-          </div>
-        ))}
+      {/* Selects grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 16 }}>
+        <SelectField
+          label="State board" value={board} onChange={setBoard}
+          options={STATE_BOARDS} placeholder="Select board…"
+        />
+        <SelectField
+          label="Target exam" value={exam}
+          onChange={v => { setExam(v); setSubject(''); }}
+          options={NATIONAL_EXAMS} placeholder="Select exam…"
+        />
+        <SelectField
+          label="Subject" value={subject} onChange={setSubject}
+          options={SUBJECTS[exam] || []} placeholder={exam ? 'Select subject…' : 'Choose exam first'}
+          disabled={!exam}
+        />
+        <SelectField
+          label="Study modules" value={maxMods} onChange={setMaxMods}
+          options={['1','2','3','4','5','6','7','8','9','10']}
+          placeholder="Max modules…"
+        />
       </div>
 
       <ErrorBanner message={error} />
-      <button className="btn btn-primary btn-lg" onClick={handleSubmit} style={{ alignSelf:'flex-start' }}>
-        Find My Gaps →
+
+      <button
+        className="btn btn-primary btn-lg"
+        onClick={handleSubmit}
+        style={{ alignSelf: 'flex-start' }}
+      >
+        Find my gaps ↗
       </button>
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options, placeholder, disabled }) {
+  return (
+    <div className="form-group">
+      <label>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <select
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          disabled={disabled}
+          style={{ opacity: disabled ? 0.38 : 1, paddingRight: 32 }}
+        >
+          <option value="">{placeholder}</option>
+          {options.map(o => <option key={o}>{o}</option>)}
+        </select>
+        <span style={{
+          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+          pointerEvents: 'none', color: 'rgba(255,248,240,0.30)', fontSize: 10,
+        }}>▾</span>
+      </div>
     </div>
   );
 }
