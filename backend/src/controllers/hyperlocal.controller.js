@@ -60,6 +60,28 @@ async function generateBatch(req, res, next) {
       result = await aiService.generateHyperlocalBatch({ original_text, concept, subject, class_level, region_keys });
     } catch (aiErr) { return next(aiErr); }
 
+    // Persist asynchronously — non-blocking
+    if (result && Array.isArray(result.results)) {
+      result.results.forEach(resItem => {
+        HyperContent.create({
+          userId:         req.user.id,
+          region:         resItem.region,
+          region_key:     resItem.region_key || resItem.region,
+          concept,
+          subject,
+          class_level,
+          language_hint:  resItem.language_hint,
+          original_text,
+          rewritten_text: resItem.rewritten_text,
+          changes_made:   resItem.changes_made || [],
+          why_this_helps: resItem.why_this_helps,
+          cognitive_load_reduction: resItem.cognitive_load_reduction,
+          mathematical_invariance:  resItem.mathematical_invariance,
+          cultural_authenticity_notes: resItem.cultural_authenticity_notes,
+        }).catch(err => console.error('HyperContent batch save error (non-fatal):', err.message));
+      });
+    }
+
     res.json(result);
   } catch (err) { next(err); }
 }

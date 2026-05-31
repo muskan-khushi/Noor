@@ -19,7 +19,7 @@ async function analyse(req, res, next) {
   };
 
   try {
-    const { board, exam, subject } = req.body;
+    const { board, exam, subject, max_module_generation } = req.body;
 
     // Input validation
     const validExams = ['NEET', 'JEE Mains', 'CUET'];
@@ -55,6 +55,9 @@ async function analyse(req, res, next) {
     form.append('board', board);
     form.append('exam', exam);
     form.append('subject', subject);
+    if (max_module_generation) {
+      form.append('max_module_generation', max_module_generation);
+    }
 
     let aiResult;
     try {
@@ -84,6 +87,7 @@ async function analyse(req, res, next) {
       alignmentScore: aiResult.alignment_report?.alignment_score || null,
       marksAtRisk:    aiResult.alignment_report?.marks_at_risk_estimate || null,
       studyHours:     aiResult.alignment_report?.study_hours_estimate || null,
+      alignmentReport: aiResult.alignment_report || null,
       gaps:           aiResult.gaps || [],
     }).then(report => {
       // Return with reportId

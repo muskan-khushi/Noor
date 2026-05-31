@@ -58,7 +58,7 @@ async function generateHyperlocal(payload) {
 
 /** Batch hyperlocal generation for multiple regions */
 async function generateHyperlocalBatch(payload) {
-  return aiRequest('POST', '/hyperlocal/generate/batch', payload, {}, TIMEOUTS.gap);
+  return aiRequest('POST', '/hyperlocal/batch-generate', payload, {}, TIMEOUTS.gap);
 }
 
 /** Fetch available region list from AI engine */

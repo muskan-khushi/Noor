@@ -13,6 +13,7 @@ async function authMiddleware(req, res, next) {
     const user = await User.findById(decoded.id).select('-password').lean();
     if (!user) return res.status(401).json({ message: 'User not found. Please sign in again.' });
     req.user = user;
+    req.user.id = user._id.toString();
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
