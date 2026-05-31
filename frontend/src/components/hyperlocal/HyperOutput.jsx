@@ -1,53 +1,63 @@
 import React, { useState } from 'react';
 
-function InvarianceWarning({ invariance }) {
-  if (!invariance || invariance.invariant) return null;
+/* ── Invariance warning banner ─────────────────────────────── */
+function InvarianceWarning({ inv }) {
+  if (!inv || inv.invariant) return null;
   return (
     <div style={{
-      background: '#fef3c7', border: '1px solid #fbbf24',
-      borderRadius: 8, padding: '10px 14px', marginBottom: 16,
-      display: 'flex', gap: 8, alignItems: 'flex-start',
+      background: 'rgba(255,200,100,0.09)', border: '1px solid rgba(255,200,100,0.20)',
+      borderRadius: 12, padding: '11px 15px',
+      display: 'flex', gap: 9, alignItems: 'flex-start',
     }}>
-      <span style={{ fontSize: 16 }}>⚠️</span>
+      <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>⚠</span>
       <div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>Mathematical Invariance Warning</div>
-        <div style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
-          {invariance.warning}. Verify that all numbers match the original before using this with students.
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: '#FFE8B8', marginBottom: 3 }}>
+          Mathematical Invariance Warning
+        </div>
+        <div style={{ fontSize: 12, color: 'rgba(255,232,184,0.70)', lineHeight: 1.6 }}>
+          {inv.warning}. Verify all numbers match the original before using with students.
         </div>
       </div>
     </div>
   );
 }
 
+/* ── Substitution diff table ───────────────────────────────── */
 function ChangesTable({ changes }) {
-  if (!changes || changes.length === 0) return null;
+  if (!changes?.length) return null;
   return (
-    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: 16 }}>
-      <h3 style={{ fontSize: 13, fontWeight: 700, color: '#065f46', marginBottom: 12 }}>
-        🔄 Substitutions Made ({changes.length})
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {changes.map((change, i) => {
-          // Try to parse "X → Y" format
-          const parts = change.split(/\s*(?:→|->)\s*/);
-          if (parts.length === 2) {
-            return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{
-                  background: '#fee2e2', color: '#991b1b',
-                  borderRadius: 4, padding: '2px 8px', fontSize: 12,
-                  fontFamily: 'monospace', textDecoration: 'line-through', opacity: 0.8,
-                }}>{parts[0]}</span>
-                <span style={{ color: '#64748b' }}>→</span>
-                <span style={{
-                  background: '#d1fae5', color: '#065f46',
-                  borderRadius: 4, padding: '2px 8px', fontSize: 12, fontFamily: 'monospace',
-                }}>{parts[1]}</span>
-              </div>
-            );
-          }
+    <div style={{
+      background: 'rgba(184,255,232,0.05)', border: '1px solid rgba(184,255,232,0.12)',
+      borderRadius: 16, padding: '18px 20px',
+    }}>
+      <div style={{
+        fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+        color: 'rgba(184,255,232,0.45)', marginBottom: 14, fontWeight: 600,
+      }}>🔄 Substitutions made ({changes.length})</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {changes.map((c, i) => {
+          const parts = c.split(/\s*(?:→|->)\s*/);
           return (
-            <div key={i} style={{ fontSize: 13, color: '#166534' }}>• {change}</div>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+              {parts.length === 2 ? (
+                <>
+                  <span style={{
+                    background: 'rgba(255,100,100,0.12)', color: 'rgba(255,181,200,0.80)',
+                    borderRadius: 6, padding: '2px 9px', fontSize: 12,
+                    fontFamily: 'monospace',
+                    textDecoration: 'line-through', opacity: 0.8,
+                  }}>{parts[0]}</span>
+                  <span style={{ color: 'rgba(255,248,240,0.28)', fontSize: 11 }}>→</span>
+                  <span style={{
+                    background: 'rgba(184,255,232,0.12)', color: 'rgba(184,255,232,0.85)',
+                    borderRadius: 6, padding: '2px 9px', fontSize: 12,
+                    fontFamily: 'monospace',
+                  }}>{parts[1]}</span>
+                </>
+              ) : (
+                <span style={{ fontSize: 13, color: 'rgba(255,248,240,0.50)' }}>· {c}</span>
+              )}
+            </div>
           );
         })}
       </div>
@@ -55,142 +65,195 @@ function ChangesTable({ changes }) {
   );
 }
 
-function CLTPanel({ cognitiveLoad, whyHelps }) {
-  const [expanded, setExpanded] = useState(false);
-  if (!cognitiveLoad && !whyHelps) return null;
+/* ── CLT panel ──────────────────────────────────────────────── */
+function CLTPanel({ cogLoad, whyHelps }) {
+  const [open, setOpen] = useState(false);
+  if (!cogLoad && !whyHelps) return null;
   return (
-    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: 14 }}>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          width: '100%', background: 'none', border: 'none', cursor: 'pointer',
-          padding: 0,
-        }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#1e40af' }}>
-          🧠 Cognitive Load Theory Analysis
-        </span>
-        <span style={{ fontSize: 12, color: '#3b82f6' }}>{expanded ? '▲' : '▼'}</span>
+    <div style={{
+      background: 'rgba(184,212,255,0.05)', border: '1px solid rgba(184,212,255,0.12)',
+      borderRadius: 14, padding: '14px 18px',
+    }}>
+      <button type="button" onClick={() => setOpen(o => !o)} style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+      }}>
+        <span style={{
+          fontSize: 10.5, fontWeight: 700, color: 'rgba(184,212,255,0.52)',
+          letterSpacing: '0.11em', textTransform: 'uppercase',
+        }}>🧠 Cognitive Load Theory Analysis</span>
+        <span style={{ fontSize: 10, color: 'rgba(184,212,255,0.40)' }}>{open ? '▲' : '▼'}</span>
       </button>
-      {expanded && (
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {open && (
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {whyHelps && (
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Why this helps</div>
-              <p style={{ fontSize: 13, color: '#1e3a8a', margin: 0 }}>{whyHelps}</p>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(184,212,255,0.42)',
+                textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Why this helps</div>
+              <p style={{ fontSize: 13, color: 'rgba(255,248,240,0.55)', lineHeight: 1.72, fontWeight: 300, margin: 0 }}>
+                {whyHelps}
+              </p>
             </div>
           )}
-          {cognitiveLoad && (
+          {cogLoad && (
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Extraneous load removed</div>
-              <p style={{ fontSize: 13, color: '#1e3a8a', margin: 0 }}>{cognitiveLoad}</p>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(184,212,255,0.42)',
+                textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Extraneous load removed</div>
+              <p style={{ fontSize: 13, color: 'rgba(255,248,240,0.55)', lineHeight: 1.72, fontWeight: 300, margin: 0 }}>
+                {cogLoad}
+              </p>
             </div>
           )}
-          <div style={{ fontSize: 11, color: '#60a5fa', marginTop: 4 }}>
-            Based on Sweller (1988) Cognitive Load Theory. Familiar context reduces extraneous load,
-            freeing working memory for intrinsic learning.
-          </div>
+          <p style={{ fontSize: 10.5, color: 'rgba(255,248,240,0.22)', fontStyle: 'italic', margin: 0 }}>
+            Based on Sweller (1988) Cognitive Load Theory — familiar context reduces extraneous load.
+          </p>
         </div>
       )}
     </div>
   );
 }
 
-export default function HyperOutput({ data, onReset }) {
-  const [view, setView] = useState('side-by-side');  // 'side-by-side' | 'original' | 'localised'
-
+/* ── Batch result view ──────────────────────────────────────── */
+function BatchResults({ results, onReset }) {
+  const [active, setActive] = useState(0);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
-              Localised for {data.region}
-            </h2>
-            <span style={{
-              background: '#fff7ed', color: '#c2410c',
-              border: '1px solid #fed7aa', borderRadius: 6,
-              padding: '2px 8px', fontSize: 11, fontWeight: 700,
-            }}>{data.language_hint || 'Hindi/English'}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {data.subject && (
-              <span style={{ background: '#f1f5f9', color: '#475569', borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>
-                {data.subject}
-              </span>
-            )}
-            {data.concept && (
-              <span style={{ background: '#eff6ff', color: '#1d4ed8', borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>
-                {data.concept}
-              </span>
-            )}
-          </div>
+          <div style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: 'rgba(212,184,255,0.45)', marginBottom: 7, fontWeight: 600 }}>Batch results</div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, fontWeight: 400,
+            color: 'rgba(255,248,240,0.90)' }}>{results.length} regions localised</h2>
         </div>
-        <button className="btn btn-outline" onClick={onReset}>↩ Try Another</button>
+        <button className="btn btn-outline btn-sm" onClick={onReset}>↩ Try another</button>
       </div>
 
-      {/* Invariance warning */}
-      <InvarianceWarning invariance={data.mathematical_invariance} />
+      {/* Region tabs */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {results.map((r, i) => (
+          <button key={i} onClick={() => setActive(i)} style={{
+            padding: '7px 16px', borderRadius: 999, fontSize: 12.5, fontWeight: 500,
+            cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+            background: active === i ? 'rgba(212,184,255,0.16)' : 'rgba(255,248,240,0.04)',
+            color: active === i ? '#D4B8FF' : 'rgba(255,248,240,0.45)',
+            border: active === i ? '1px solid rgba(212,184,255,0.28)' : '1px solid rgba(255,248,240,0.08)',
+            transition: 'all 0.18s',
+          }}>{r.region}</button>
+        ))}
+      </div>
+
+      {results[active] && <SingleResult data={results[active]} />}
+    </div>
+  );
+}
+
+/* ── Single result ──────────────────────────────────────────── */
+function SingleResult({ data }) {
+  const [view, setView] = useState('side');
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
       {/* View toggle */}
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div style={{ display: 'flex', gap: 7 }}>
         {[
-          { key: 'side-by-side', label: '⊟ Side by Side' },
-          { key: 'original',     label: '📖 Original' },
-          { key: 'localised',    label: '✨ Localised' },
-        ].map(({ key, label }) => (
-          <button key={key} onClick={() => setView(key)} style={{
-            padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-            cursor: 'pointer',
-            background: view === key ? '#1e293b' : '#fff',
-            color: view === key ? '#fff' : '#475569',
-            border: `1.5px solid ${view === key ? '#1e293b' : '#e2e8f0'}`,
-          }}>{label}</button>
+          ['side',     '⊟ Side by side'],
+          ['original', '📖 Original'],
+          ['local',    '✦ Localised'],
+        ].map(([k, l]) => (
+          <button key={k} onClick={() => setView(k)} style={{
+            padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,
+            cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+            background: view === k ? 'rgba(255,212,184,0.12)' : 'rgba(255,248,240,0.04)',
+            color: view === k ? '#FFD4B8' : 'rgba(255,248,240,0.38)',
+            border: view === k ? '1px solid rgba(255,212,184,0.22)' : '1px solid rgba(255,248,240,0.08)',
+            transition: 'all 0.18s',
+          }}>{l}</button>
         ))}
       </div>
 
       {/* Text panels */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: view === 'side-by-side' ? '1fr 1fr' : '1fr',
+        gridTemplateColumns: view === 'side' ? '1fr 1fr' : '1fr',
         gap: 16,
       }}>
-        {(view === 'side-by-side' || view === 'original') && (
-          <div style={{ background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#94a3b8', marginBottom: 12 }}>
-              📖 Original Textbook Version
-            </h3>
-            <p style={{ fontSize: 14, lineHeight: 1.9, color: '#374151', margin: 0 }}>{data.original_text}</p>
+        {(view === 'side' || view === 'original') && (
+          <div className="glass" style={{ borderRadius: 16, padding: '22px' }}>
+            <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+              color: 'rgba(255,248,240,0.28)', marginBottom: 13, fontWeight: 600 }}>📖 Original</div>
+            <p style={{ fontSize: 13.5, lineHeight: 1.9, color: 'rgba(255,248,240,0.62)', fontWeight: 300, margin: 0 }}>
+              {data.original_text}
+            </p>
           </div>
         )}
-        {(view === 'side-by-side' || view === 'localised') && (
-          <div style={{ background: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#c2410c', marginBottom: 12 }}>
-              ✨ Localised — {data.region}
-            </h3>
-            <p style={{ fontSize: 14, lineHeight: 1.9, color: '#374151', margin: 0 }}>{data.rewritten_text}</p>
+        {(view === 'side' || view === 'local') && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(212,184,255,0.08), rgba(184,212,255,0.06))',
+            border: '1px solid rgba(212,184,255,0.16)',
+            borderRadius: 16, padding: '22px',
+          }}>
+            <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase',
+              color: 'rgba(212,184,255,0.50)', marginBottom: 13, fontWeight: 600 }}>
+              ✦ Localised — {data.region}
+            </div>
+            <p style={{ fontSize: 13.5, lineHeight: 1.9, color: 'rgba(255,248,240,0.78)', fontWeight: 300, margin: 0 }}>
+              {data.rewritten_text}
+            </p>
           </div>
         )}
       </div>
 
-      {/* Changes table */}
+      <InvarianceWarning inv={data.mathematical_invariance} />
       <ChangesTable changes={data.changes_made} />
+      <CLTPanel cogLoad={data.cognitive_load_reduction} whyHelps={data.why_this_helps} />
 
-      {/* CLT panel */}
-      <CLTPanel
-        cognitiveLoad={data.cognitive_load_reduction}
-        whyHelps={data.why_this_helps}
-      />
-
-      {/* Cultural notes */}
-      {data.cultural_authenticity_notes && data.cultural_authenticity_notes !== 'Localisation could not be completed automatically.' && (
-        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 14px' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', marginBottom: 4 }}>📌 Cultural fidelity notes</div>
-          <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>{data.cultural_authenticity_notes}</p>
+      {data.cultural_authenticity_notes &&
+        !data.cultural_authenticity_notes.includes('could not be completed') && (
+        <div style={{
+          background: 'rgba(255,248,240,0.025)', border: '1px solid rgba(255,248,240,0.07)',
+          borderRadius: 12, padding: '12px 16px',
+        }}>
+          <div style={{ fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase',
+            color: 'rgba(255,248,240,0.28)', marginBottom: 6, fontWeight: 600 }}>📌 Cultural notes</div>
+          <p style={{ fontSize: 12.5, color: 'rgba(255,248,240,0.40)', lineHeight: 1.7, fontWeight: 300, margin: 0 }}>
+            {data.cultural_authenticity_notes}
+          </p>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Main export ────────────────────────────────────────────── */
+export default function HyperOutput({ data, onReset }) {
+  // Batch result: has `results` array
+  if (data?.results) {
+    return <BatchResults results={data.results} onReset={onReset} />;
+  }
+
+  // Single result
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+        flexWrap: 'wrap', gap: 14 }}>
+        <div>
+          <div style={{ fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: 'rgba(212,184,255,0.45)', marginBottom: 7, fontWeight: 600 }}>Localised content</div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, fontWeight: 400,
+            color: 'rgba(255,248,240,0.90)', marginBottom: 6 }}>For {data.region}</h2>
+          {data.language_hint && (
+            <span style={{
+              background: 'rgba(255,212,184,0.10)', color: '#FFD4B8',
+              border: '1px solid rgba(255,212,184,0.20)',
+              borderRadius: 6, padding: '2px 9px', fontSize: 11, fontWeight: 600,
+            }}>{data.language_hint}</span>
+          )}
+        </div>
+        <button className="btn btn-outline btn-sm" onClick={onReset}>↩ Try another</button>
+      </div>
+
+      <SingleResult data={data} />
     </div>
   );
 }

@@ -1,39 +1,51 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-
-const api = axios.create({ baseURL: process.env.REACT_APP_API_URL });
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser]   = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('noor_token'));
+  const [user,    setUser]    = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('noor_token');
-    delete api.defaults.headers.common['Authorization'];
-    setToken(null); setUser(null);
+  // Rehydrate from localStorage on mount
+  useEffect(() => {
+    const token = localStorage.getItem('noor_token');
+    const saved = localStorage.getItem('noor_user');
+    if (token && saved) {
+      try {
+        setUser(JSON.parse(saved));
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      } catch (_) {
+        localStorage.removeItem('noor_token');
+        localStorage.removeItem('noor_user');
+      }
+    }
+    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      api.get('/api/auth/me')
-        .then(res => setUser(res.data))
-        .catch(() => logout())
-        .finally(() => setLoading(false));
-    } else { setLoading(false); }
-  }, [token, logout]);
-
-  const login = (tok, userData) => {
-    localStorage.setItem('noor_token', tok);
-    api.defaults.headers.common['Authorization'] = `Bearer ${tok}`;
-    setToken(tok); setUser(userData);
+  const login = (token, userData) => {
+    localStorage.setItem('noor_token', token);
+    localStorage.setItem('noor_user', JSON.stringify(userData));
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(userData);
   };
 
-  return <AuthContext.Provider value={{ user, token, login, logout, loading }}>{children}</AuthContext.Provider>;
+  const logout = () => {
+    localStorage.removeItem('noor_token');
+    localStorage.removeItem('noor_user');
+    delete axios.defaults.headers.common['Authorization'];
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export const useAuth = () => useContext(AuthContext);
-export { api };
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  return ctx;
+}
