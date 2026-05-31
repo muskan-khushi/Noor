@@ -1,29 +1,78 @@
 version: '3.9'
-services:
-  ai-engine:
-    build: ./ai-engine
-    ports: ["8000:8000"]
-    env_file: ./ai-engine/.env
-    volumes: ["./ai-engine:/app"]
-    working_dir: /app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
+services:
+
+  # ── MongoDB ───────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: noor-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Python AI Engine ──────────────────────────────────────────
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    container_name: noor-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: ./ai-engine/.env
+    volumes:
+      - ./ai-engine/data:/app/data:ro
+      - ai_embeddings:/app/embeddings
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── Node.js Backend ───────────────────────────────────────────
   backend:
-    build: ./backend
-    ports: ["5000:5000"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: noor-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
     env_file: ./backend/.env
-    depends_on: [ai-engine]
-    volumes: ["./backend:/app"]
-    working_dir: /app
-    command: npm run dev
     environment:
       - AI_ENGINE_URL=http://ai-engine:8000
+      - MONGO_URI=mongodb://mongo:27017/noor
+    depends_on:
+      mongo:
+        condition: service_healthy
+      ai-engine:
+        condition: service_healthy
 
+  # ── React Frontend ────────────────────────────────────────────
   frontend:
-    build: ./frontend
-    ports: ["3000:3000"]
-    env_file: ./frontend/.env
-    depends_on: [backend]
-    volumes: ["./frontend:/app"]
-    working_dir: /app
-    command: npm start
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: noor-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+  ai_embeddings:

@@ -1,20 +1,30 @@
 const multer = require('multer');
-const path = require('path');
-const os = require('os');
-const crypto = require('crypto');
+const path   = require('path');
+const os     = require('os');
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, os.tmpdir()),
-  filename: (req, file, cb) => cb(null, crypto.randomUUID() + path.extname(file.originalname))
+  destination: (_req, _file, cb) => cb(null, os.tmpdir()),
+  filename:    (_req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+    cb(null, `noor-${unique}${path.extname(file.originalname)}`);
+  },
 });
+
+const fileFilter = (_req, file, cb) => {
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are accepted.'), false);
+  }
+};
 
 const upload = multer({
   storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') cb(null, true);
-    else cb(Object.assign(new Error('Only PDF files are allowed'), { status: 400 }), false);
+  fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024,   // 10 MB
+    files:    1,
   },
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
 module.exports = { upload };
