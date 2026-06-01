@@ -14,7 +14,9 @@ const fileFilter = (_req, file, cb) => {
   if (file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
-    cb(new Error('Only PDF files are accepted.'), false);
+    const err = new Error('Only PDF files are accepted.');
+    err.status = 400;
+    cb(err, false);
   }
 };
 

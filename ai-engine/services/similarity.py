@@ -171,6 +171,8 @@ class BM25Index:
 
     def score(self, query: str) -> np.ndarray:
         """Return BM25 scores for all corpus documents against query."""
+        if self.N == 0:
+            return np.array([])
         query_tokens = tokenize(query)
         scores = np.zeros(self.N)
         for term in query_tokens:
@@ -328,7 +330,7 @@ def find_gaps(
     for i, (nat_topic, dense_row) in enumerate(zip(national_chunks, sim_matrix)):
         # ── 2a. Dense signal ─────────────────────────────────────────────
         best_dense_idx = int(np.argmax(dense_row))
-        best_dense_score = float(dense_row[best_dense_idx])
+        best_dense_score = max(0.0, float(dense_row[best_dense_idx]))
 
         # ── 2b. BM25 lexical signal ───────────────────────────────────────
         bm25_scores = bm25.score(nat_topic)

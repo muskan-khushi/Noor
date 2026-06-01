@@ -20,6 +20,9 @@ import os
 import shutil
 import tempfile
 from typing import Optional
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 from fastapi import APIRouter, Form, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
@@ -40,13 +43,13 @@ router = APIRouter()
 
 SYLLABUS_MAP = {
     # Primary combinations (pre-computed embeddings available)
-    ("NEET",      "Chemistry"):   ("neet_chemistry",        "data/syllabi/neet_chemistry.json"),
-    ("NEET",      "Physics"):     ("neet_physics",          "data/syllabi/neet_physics.json"),
-    ("NEET",      "Biology"):     ("neet_biology",          "data/syllabi/neet_chemistry.json"),   # placeholder until neet_biology.json added
-    ("JEE Mains", "Mathematics"): ("jee_mains_mathematics", "data/syllabi/jee_mains_mathematics.json"),
-    ("JEE Mains", "Chemistry"):   ("neet_chemistry",        "data/syllabi/neet_chemistry.json"),   # JEE chem ≈ NEET chem syllabus
-    ("JEE Mains", "Physics"):     ("neet_physics",          "data/syllabi/neet_physics.json"),     # JEE physics ≈ NEET physics
-    ("CUET",      "Chemistry"):   ("cuet_science",          "data/syllabi/cuet_science.json"),
+    ("NEET",      "Chemistry"):   ("neet_chemistry",        str(BASE_DIR / "data/syllabi/neet_chemistry.json")),
+    ("NEET",      "Physics"):     ("neet_physics",          str(BASE_DIR / "data/syllabi/neet_physics.json")),
+    ("NEET",      "Biology"):     ("neet_biology",          str(BASE_DIR / "data/syllabi/neet_biology.json")),
+    ("JEE Mains", "Mathematics"): ("jee_mains_mathematics", str(BASE_DIR / "data/syllabi/jee_mains_mathematics.json")),
+    ("JEE Mains", "Chemistry"):   ("neet_chemistry",        str(BASE_DIR / "data/syllabi/neet_chemistry.json")),
+    ("JEE Mains", "Physics"):     ("neet_physics",          str(BASE_DIR / "data/syllabi/neet_physics.json")),
+    ("CUET",      "Chemistry"):   ("cuet_science",          str(BASE_DIR / "data/syllabi/cuet_science.json")),
 }
 
 
@@ -91,7 +94,7 @@ def load_national_syllabus(exam: str, subject: str):
 # ──────────────────────────────────────────────────────────────
 
 @router.post("/analyse")
-async def analyse_gap(
+def analyse_gap(
     syllabus: UploadFile = File(..., description="State board syllabus PDF (max 10MB)"),
     board:    str = Form(..., description="State board name (e.g. 'Maharashtra')"),
     exam:     str = Form(..., description="Target national exam (NEET/JEE Mains/CUET)"),

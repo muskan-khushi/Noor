@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login as loginAPI } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
@@ -9,8 +9,14 @@ export default function Login() {
   const [password, setPw]   = useState('');
   const [loading, setLoad]  = useState(false);
   const [error, setError]   = useState('');
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate  = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -9,8 +9,6 @@ class Settings(BaseSettings):
     @field_validator('GROQ_API_KEY')
     @classmethod
     def key_must_not_be_empty(cls, v):
-        if not v:
-            raise ValueError('GROQ_API_KEY environment variable is required. Get one at https://console.groq.com')
         return v
 
     class Config:

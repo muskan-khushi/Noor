@@ -9,7 +9,10 @@ async function authMiddleware(req, res, next) {
 
   const token = header.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      issuer: 'noor-api',
+      audience: 'noor-frontend'
+    });
     const user = await User.findById(decoded.id).select('-password').lean();
     if (!user) return res.status(401).json({ message: 'User not found. Please sign in again.' });
     req.user = user;

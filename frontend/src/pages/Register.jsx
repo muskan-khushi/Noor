@@ -1,19 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register as registerAPI } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import ErrorBanner from '../components/common/ErrorBanner';
 
 const BOARDS  = ['Maharashtra','Tamil Nadu','Rajasthan','Kerala','Punjab','West Bengal','Andhra Pradesh','Karnataka','Gujarat','Uttar Pradesh'];
-const EXAMS   = ['NEET','JEE Mains','CUET','NTSE'];
+const EXAMS   = ['NEET','JEE Mains','CUET'];
 const CLASSES = ['9','10','11','12'];
 
 export default function Register() {
   const [form, setForm] = useState({ name:'', email:'', password:'', class:'11', stateBoard:'', district:'', targetExam:'' });
   const [loading, setLoad] = useState(false);
   const [error, setError]  = useState('');
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate  = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 

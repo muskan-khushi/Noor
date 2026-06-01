@@ -37,7 +37,7 @@ Reference:
 import hashlib
 import logging
 import os
-import pickle
+import os
 import time
 from typing import List, Optional
 
@@ -97,15 +97,14 @@ def _cache_key(chunks: List[str], model_name: str) -> str:
 
 def _cache_path(cache_key: str) -> str:
     os.makedirs(CACHE_DIR, exist_ok=True)
-    return os.path.join(CACHE_DIR, f'{cache_key}.pkl')
+    return os.path.join(CACHE_DIR, f'{cache_key}.npy')
 
 
 def _load_from_cache(cache_key: str) -> Optional[np.ndarray]:
     path = _cache_path(cache_key)
     if os.path.exists(path):
         try:
-            with open(path, 'rb') as f:
-                data = pickle.load(f)
+            data = np.load(path)
             # Validate: correct type, shape, and dimension
             if (isinstance(data, np.ndarray) and
                     data.ndim == 2 and
@@ -122,8 +121,7 @@ def _load_from_cache(cache_key: str) -> Optional[np.ndarray]:
 def _save_to_cache(cache_key: str, embeddings: np.ndarray) -> None:
     path = _cache_path(cache_key)
     try:
-        with open(path, 'wb') as f:
-            pickle.dump(embeddings, f, protocol=pickle.HIGHEST_PROTOCOL)
+        np.save(path, embeddings)
         logger.info(f"Cache SAVED: {cache_key} ({embeddings.shape})")
     except Exception as e:
         logger.warning(f"Cache save failed (non-fatal): {e}")
@@ -275,11 +273,10 @@ def load_or_compute_syllabus_embeddings(
         if cached is not None and cached.shape[0] == len(chunks):
             return cached
         # Also try the legacy key-name-based cache for backward compat
-        legacy_path = os.path.join(CACHE_DIR, f'{syllabus_key}_embeddings.pkl')
+        legacy_path = os.path.join(CACHE_DIR, f'{syllabus_key}_embeddings.npy')
         if os.path.exists(legacy_path):
             try:
-                with open(legacy_path, 'rb') as f:
-                    legacy = pickle.load(f)
+                legacy = np.load(legacy_path)
                 if isinstance(legacy, np.ndarray) and legacy.shape[0] == len(chunks):
                     logger.info(f"Legacy cache hit for {syllabus_key}")
                     return legacy.astype(np.float32)

@@ -300,7 +300,7 @@ def rewrite_with_local_context(
                     )},
                 ],
                 temperature=temp,
-                max_tokens=1200,
+                max_tokens=2000,
                 timeout=40,
             )
 

@@ -1,28 +1,24 @@
 <div align="center">
 
-```
-    ███╗   ██╗ ██████╗  ██████╗ ██████╗
-    ████╗  ██║██╔═══██╗██╔═══██╗██╔══██╗
-    ██╔██╗ ██║██║   ██║██║   ██║██████╔╝
-    ██║╚██╗██║██║   ██║██║   ██║██╔══██╗
-    ██║ ╚████║╚██████╔╝╚██████╔╝██║  ██║
-    ╚═╝  ╚═══╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝
-```
-
-# نور
+<img src="./assets/banner.png" alt="Noor Banner" width="100%" />
 
 ### *Light on the path. Knowledge rooted in your world.*
 
-**AI-powered curriculum gap detection and culturally grounded learning for India's 250 million state board students.**
+<p align="center" style="font-size: 1.1em; color: #666;">
+  <strong>AI-powered curriculum gap detection and culturally grounded learning for India's 250 million state board students.</strong>
+</p>
 
 ---
 
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://mongodb.com)
-[![License](https://img.shields.io/badge/License-MIT-D4B8FF?style=flat-square)](LICENSE)
+<br/>
+<p align="center">
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" /></a>
+  <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" /></a>
+  <a href="https://react.dev"><img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" /></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" /></a>
+  <a href="https://mongodb.com"><img src="https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-D4B8FF?style=for-the-badge" alt="License" /></a>
+</p>
 
 </div>
 

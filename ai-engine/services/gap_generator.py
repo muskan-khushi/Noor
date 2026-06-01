@@ -331,7 +331,7 @@ def generate_gap_module(
                     {'role': 'user', 'content': build_generation_prompt(topic, exam, subject)},
                 ],
                 temperature=temp,
-                max_tokens=900,
+                max_tokens=1500,
                 timeout=35,
             )
 

@@ -4,6 +4,8 @@ const cors    = require('cors');
 const connectDB     = require('./config/db');
 const { loadEnv }   = require('./config/env');
 const errorMiddleware = require('./middleware/errorMiddleware');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 
 const authRoutes       = require('./routes/auth.routes');
 const gapRoutes        = require('./routes/gap.routes');
@@ -15,8 +17,21 @@ loadEnv();
 const app = express();
 
 // ── Middleware ─────────────────────────────────────────────────
+app.use(helmet());
+app.use(mongoSanitize());
 app.use(cors({
-  origin:      process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost',
+      'http://127.0.0.1:3000'
+    ];
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));

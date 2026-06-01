@@ -35,5 +35,8 @@ module.exports = function errorMiddleware(err, _req, res, _next) {
     console.error(`[ERROR] ${status} — ${message}`, err.stack?.split('\n')[1] || '');
   }
 
-  res.status(status).json({ message });
+  const outputMessage = (status === 500 && process.env.NODE_ENV === 'production') 
+    ? 'Internal server error' 
+    : message;
+  res.status(status).json({ message: outputMessage });
 };

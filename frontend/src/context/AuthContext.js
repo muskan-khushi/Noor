@@ -7,7 +7,6 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Rehydrate from localStorage on mount
   useEffect(() => {
     const token = localStorage.getItem('noor_token');
     const saved = localStorage.getItem('noor_user');
@@ -15,12 +14,25 @@ export function AuthProvider({ children }) {
       try {
         setUser(JSON.parse(saved));
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // Validate token with backend
+        axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/auth/me`)
+          .then(res => setUser(res.data))
+          .catch(() => {
+            localStorage.removeItem('noor_token');
+            localStorage.removeItem('noor_user');
+            delete axios.defaults.headers.common['Authorization'];
+            setUser(null);
+          })
+          .finally(() => setLoading(false));
       } catch (_) {
         localStorage.removeItem('noor_token');
         localStorage.removeItem('noor_user');
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = (token, userData) => {

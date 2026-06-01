@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import AuroraBackground from './components/common/AuroraBackground';
 import Navbar           from './components/common/Navbar';
 import ProtectedRoute   from './components/common/ProtectedRoute';
+import ErrorBoundary    from './components/common/ErrorBoundary';
 
 import Landing       from './pages/Landing';
 import Login         from './pages/Login';
@@ -24,14 +25,22 @@ export default function App() {
         {/* All app content sits above the aurora */}
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
           <Navbar />
-          <Routes>
-            <Route path="/"           element={<Landing />} />
-            <Route path="/login"      element={<Login />} />
-            <Route path="/register"   element={<Register />} />
-            <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/gap-finder" element={<ProtectedRoute><GapFinderPage /></ProtectedRoute>} />
-            <Route path="/hyperlocal" element={<ProtectedRoute><HyperLocalPage /></ProtectedRoute>} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/"           element={<Landing />} />
+              <Route path="/login"      element={<Login />} />
+              <Route path="/register"   element={<Register />} />
+              <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/gap-finder" element={<ProtectedRoute><GapFinderPage /></ProtectedRoute>} />
+              <Route path="/hyperlocal" element={<ProtectedRoute><HyperLocalPage /></ProtectedRoute>} />
+              <Route path="*"           element={
+                <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column' }}>
+                  <h1 style={{ fontSize: 64, margin: 0 }}>404</h1>
+                  <p style={{ color: 'rgba(255,248,240,0.5)' }}>Page not found.</p>
+                </div>
+              } />
+            </Routes>
+          </ErrorBoundary>
         </div>
       </Router>
     </AuthProvider>

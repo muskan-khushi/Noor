@@ -26,7 +26,15 @@ UserSchema.methods.matchPassword = function (plain) {
 
 // Generate JWT
 UserSchema.methods.generateToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(
+    { id: this._id },
+    process.env.JWT_SECRET,
+    { 
+      expiresIn: '7d',
+      issuer: 'noor-api',
+      audience: 'noor-frontend'
+    }
+  );
 };
 
 // Safe public projection
