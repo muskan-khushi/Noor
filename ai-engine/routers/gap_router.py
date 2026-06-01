@@ -7,9 +7,9 @@ Endpoint: POST /gap/analyse
 Pipeline: PDF → parse → chunk → embed → compare → score → generate modules → return
 
 Performance targets (on standard laptop CPU):
-  - PDF parsing:      <2s for 20-page PDF
-  - Embedding:        <5s for 200 chunks (cached national syllabi: 0s)
-  - Gap detection:    <1s (BM25 + cosine)
+  - PDF parsing:       <2s for 20-page PDF
+  - Embedding:         <5s for 200 chunks (cached national syllabi: 0s)
+  - Gap detection:     <1s (BM25 + cosine)
   - Module generation: ~3s per CRITICAL gap (5 modules max = ~15s)
   Total: ~25s end-to-end (within the 30s Loader message shown to user)
 """
@@ -40,15 +40,15 @@ router = APIRouter()
 
 SYLLABUS_MAP = {
     # Primary combinations (pre-computed embeddings available)
-    ("NEET",      "Chemistry"):   ("neet_chemistry",         "data/syllabi/neet_chemistry.json"),
-    ("NEET",      "Physics"):     ("neet_physics",           "data/syllabi/neet_physics.json"),
-    ("JEE Mains", "Mathematics"): ("jee_maths",              "data/syllabi/jee_maths.json"),
-    ("CUET",      "Chemistry"):   ("cuet_science",           "data/syllabi/cuet_science.json"),
-    # Extended combinations (load from more complete JSON files)
-    ("JEE Mains", "Chemistry"):   ("jee_mains_chemistry",    "data/syllabi/neet_chemistry.json"),  # JEE chem ≈ NEET chem
-    ("NEET",      "Biology"):     ("neet_biology",           "data/syllabi/neet_chemistry.json"),  # placeholder
-    ("JEE Mains", "Physics"):     ("jee_mains_physics",      "data/syllabi/neet_physics.json"),
+    ("NEET",      "Chemistry"):   ("neet_chemistry",        "data/syllabi/neet_chemistry.json"),
+    ("NEET",      "Physics"):     ("neet_physics",          "data/syllabi/neet_physics.json"),
+    ("NEET",      "Biology"):     ("neet_biology",          "data/syllabi/neet_chemistry.json"),   # placeholder until neet_biology.json added
+    ("JEE Mains", "Mathematics"): ("jee_mains_mathematics", "data/syllabi/jee_mains_mathematics.json"),
+    ("JEE Mains", "Chemistry"):   ("neet_chemistry",        "data/syllabi/neet_chemistry.json"),   # JEE chem ≈ NEET chem syllabus
+    ("JEE Mains", "Physics"):     ("neet_physics",          "data/syllabi/neet_physics.json"),     # JEE physics ≈ NEET physics
+    ("CUET",      "Chemistry"):   ("cuet_science",          "data/syllabi/cuet_science.json"),
 }
+
 
 def load_national_syllabus(exam: str, subject: str):
     """
@@ -60,8 +60,8 @@ def load_national_syllabus(exam: str, subject: str):
         supported = [f"{e}/{s}" for e, s in SYLLABUS_MAP.keys()]
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported exam/subject: '{exam}/{subject}'. "
-                   f"Supported: {', '.join(supported)}"
+            detail=f"Unsupported exam/subject combination: '{exam}/{subject}'. "
+                   f"Supported combinations: {', '.join(supported)}"
         )
 
     syllabus_key, path = SYLLABUS_MAP[key]
@@ -70,7 +70,7 @@ def load_national_syllabus(exam: str, subject: str):
         raise HTTPException(
             status_code=500,
             detail=f"Syllabus data file not found: {path}. "
-                   f"Please contact the administrator."
+                   f"Please ensure all data files are present."
         )
 
     with open(path) as f:
@@ -93,9 +93,9 @@ def load_national_syllabus(exam: str, subject: str):
 @router.post("/analyse")
 async def analyse_gap(
     syllabus: UploadFile = File(..., description="State board syllabus PDF (max 10MB)"),
-    board:   str = Form(..., description="State board name (e.g. 'Maharashtra')"),
-    exam:    str = Form(..., description="Target national exam (NEET/JEE Mains/CUET)"),
-    subject: str = Form(..., description="Subject (Chemistry/Physics/Mathematics/Biology)"),
+    board:    str = Form(..., description="State board name (e.g. 'Maharashtra')"),
+    exam:     str = Form(..., description="Target national exam (NEET/JEE Mains/CUET)"),
+    subject:  str = Form(..., description="Subject (Chemistry/Physics/Mathematics/Biology)"),
     max_module_generation: Optional[int] = Form(
         default=5,
         description="Max number of CRITICAL gaps for which to auto-generate study modules (1-10)"
@@ -108,15 +108,13 @@ async def analyse_gap(
     compares against the target national exam syllabus using multi-signal
     similarity. Returns a prioritised gap report with AI-generated study modules
     for the most critical gaps.
-
-    Response includes:
-    - gaps:                List of gap items sorted by priority
-    - alignment_report:   Aggregate metrics (% coverage, marks at risk, study hours)
-    - totalGapsFound:      Total gap count
-    - criticalGaps:        CRITICAL priority gap count
     """
-    # Validate max_module_generation
-    max_modules = min(max(int(max_module_generation or 5), 1), 10)
+    # Fix: use explicit None check so that a value of 0 is handled correctly
+    # rather than the falsy `or 5` pattern which treats 0 as missing.
+    if max_module_generation is None:
+        max_modules = 5
+    else:
+        max_modules = min(max(max_module_generation, 1), 10)
 
     # Save uploaded PDF to temp file
     suffix = os.path.splitext(syllabus.filename or '.pdf')[1] or '.pdf'
@@ -193,6 +191,7 @@ async def analyse_gap(
         module_count = 0
         for gap in gaps:
             if gap['priority'] != 'CRITICAL':
+                gap['studyModule'] = None
                 continue
             if module_count >= max_modules:
                 gap['studyModule'] = None
@@ -226,18 +225,18 @@ async def analyse_gap(
         )
 
         return {
-            "board":          board,
-            "exam":           exam,
-            "subject":        subject,
-            "totalGapsFound": len(gaps),
-            "criticalGaps":   critical_count,
-            "highGaps":       high_count,
-            "mediumGaps":     medium_count,
-            "summary":        summary,
-            "alignment_report": alignment_report,
-            "state_chunks_count": len(state_chunks),
-            "national_topics_count": len(national_chunks),
-            "gaps": gaps,
+            "board":                   board,
+            "exam":                    exam,
+            "subject":                 subject,
+            "totalGapsFound":          len(gaps),
+            "criticalGaps":            critical_count,
+            "highGaps":                high_count,
+            "mediumGaps":              medium_count,
+            "summary":                 summary,
+            "alignment_report":        alignment_report,
+            "state_chunks_count":      len(state_chunks),
+            "national_topics_count":   len(national_chunks),
+            "gaps":                    gaps,
         }
 
     finally:

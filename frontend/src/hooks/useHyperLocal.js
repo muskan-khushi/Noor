@@ -1,20 +1,36 @@
 import { useState, useCallback } from 'react';
-import { analyseGap } from '../api/gapFinder';
+import { generateHyperlocal, batchGenerateHyperlocal } from '../api/hyperlocalGen';
 
-export function useGapAnalysis() {
+export function useHyperlocal() {
   const [result,  setResult]  = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
 
-  const analyse = useCallback(async (formData) => {
+  const generate = useCallback(async (payload) => {
     setLoading(true);
     setError('');
     try {
-      const data = await analyseGap(formData);
+      const data = await generateHyperlocal(payload);
       setResult(data);
       return data;
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Analysis failed.';
+      const msg = err.response?.data?.message || err.message || 'Generation failed.';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const generateBatch = useCallback(async (payload) => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await batchGenerateHyperlocal(payload);
+      setResult(data);
+      return data;
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Batch generation failed.';
       setError(msg);
       throw err;
     } finally {
@@ -27,5 +43,5 @@ export function useGapAnalysis() {
     setError('');
   }, []);
 
-  return { result, loading, error, analyse, reset };
+  return { result, loading, error, generate, generateBatch, reset };
 }

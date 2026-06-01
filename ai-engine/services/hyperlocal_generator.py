@@ -17,15 +17,11 @@ educational psychology:
    we eliminate this extraneous load and free working memory for the intrinsic
    load of the concept itself.
 
-   CLT predicts this should improve problem-solving performance by 15-25% on
-   unfamiliar-context problems (measured by reduced time-to-solve and error rate).
-
 2. VYGOTSKY'S ZONE OF PROXIMAL DEVELOPMENT (Vygotsky, 1978)
    Students learn most efficiently when new concepts are introduced via familiar
-   scaffolding — the "more knowledgeable other" in Vygotsky's framework can be
-   replaced by a culturally resonant problem context. A student who has never
-   seen a market economy problem can still engage with "If a camel trader at
-   Pushkar Mela charges 15% profit on camels bought at Rs. 25,000..."
+   scaffolding. A student who has never seen a market economy problem can still
+   engage with "If a camel trader at Pushkar Mela charges 15% profit on camels
+   bought at Rs. 25,000..."
 
 FIDELITY CONSTRAINTS:
   The rewriting must be mathematically invariant — identical numbers, structure,
@@ -33,13 +29,6 @@ FIDELITY CONSTRAINTS:
     a) Numerical preservation check: all numbers in the rewritten text match original
     b) Operation preservation: mathematical operators/relationships unchanged
     c) Concept tagging: original concept tag is preserved verbatim
-
-CULTURAL ACCURACY:
-  The regional context JSONs are curated with specific fidelity requirements:
-    — Distances and prices reflect real market data (as of 2023-24)
-    — Occupations reflect census-level employment distributions
-    — Foods and festivals are primary, not tourist-facing
-    — Units of measure are traditional ones in actual use
 
 References:
   Sweller (1988). "Cognitive load during problem solving". Cognitive Science.
@@ -52,7 +41,7 @@ import json
 import logging
 import re
 import time
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 from openai import OpenAI
 from config import settings
@@ -115,17 +104,18 @@ def validate_mathematical_invariance(original: str, rewritten: str) -> Dict:
         }
     """
     orig_numbers = set(n.replace(',', '') for n in extract_numbers(original))
-    new_numbers = set(n.replace(',', '') for n in extract_numbers(rewritten))
+    new_numbers  = set(n.replace(',', '') for n in extract_numbers(rewritten))
 
-    # Numbers that disappeared
     missing = orig_numbers - new_numbers
-    # New numbers that appeared (might indicate substitution error)
-    extra = new_numbers - orig_numbers
+    extra   = new_numbers - orig_numbers
 
-    # Allow some tolerance: small numbers (1-10) might change as
-    # incidental counting context, not mathematical values
-    significant_missing = {n for n in missing if float(n.replace('%', '')) > 10}
-    significant_extra = {n for n in extra if float(n.replace('%', '')) > 10}
+    # Allow tolerance for small numbers (1-10) which may change as incidental context
+    try:
+        significant_missing = {n for n in missing if float(n.replace('%', '')) > 10}
+        significant_extra   = {n for n in extra   if float(n.replace('%', '')) > 10}
+    except ValueError:
+        significant_missing = missing
+        significant_extra   = extra
 
     invariant = len(significant_missing) == 0
 
@@ -136,10 +126,10 @@ def validate_mathematical_invariance(original: str, rewritten: str) -> Dict:
         warning = (warning or '') + f" | Unexpected new values: {significant_extra}"
 
     return {
-        'invariant': invariant,
-        'missing_numbers': list(missing),
-        'extra_numbers': list(extra),
-        'warning': warning,
+        'invariant':        invariant,
+        'missing_numbers':  list(missing),
+        'extra_numbers':    list(extra),
+        'warning':          warning,
     }
 
 
@@ -170,23 +160,17 @@ def build_hyperlocal_prompt(
 ) -> str:
     """
     Build a structured prompt for culturally-grounded content rewriting.
-
-    The prompt is structured to prevent the most common LLM failure modes:
-    1. Changing numerical values (breaks mathematical invariance)
-    2. Using general "Indian" examples rather than region-specific ones
-    3. Maintaining original structure but just replacing names (surface-level)
-    4. Losing domain-specific terminology
     """
-    region = context.get('region', 'the student\'s region')
-    occupations = context.get('occupations', [])[:5]
-    foods = context.get('foods', [])[:4]
-    festivals = context.get('festivals', [])[:3]
-    geography = context.get('geography', [])[:4]
-    units = context.get('units_of_measure', [])[:4]
-    markets = context.get('local_markets', [])[:3]
-    animals = context.get('animals', [])[:4]
-    distances = context.get('distances', [])[:3]
-    sample_hint = context.get('sample_rewrite_hint', '')
+    region       = context.get('region', 'the student\'s region')
+    occupations  = context.get('occupations', [])[:5]
+    foods        = context.get('foods', [])[:4]
+    festivals    = context.get('festivals', [])[:3]
+    geography    = context.get('geography', [])[:4]
+    units        = context.get('units_of_measure', [])[:4]
+    markets      = context.get('local_markets', [])[:3]
+    animals      = context.get('animals', [])[:4]
+    distances    = context.get('distances', [])[:3]
+    sample_hint  = context.get('sample_rewrite_hint', '')
     water_sources = context.get('water_sources', [])[:3]
 
     return f"""TASK: Rewrite the following Class {class_level} {subject} content for a student from {region}.
@@ -237,7 +221,7 @@ RESPOND ONLY WITH VALID JSON. DO NOT CHANGE ANY NUMBERS. DO NOT ADD MARKDOWN FEN
 
 
 # ──────────────────────────────────────────────────────────────
-# BATCH REWRITING (for generating multiple localised examples)
+# BATCH REWRITING
 # ──────────────────────────────────────────────────────────────
 
 def batch_rewrite_for_multiple_regions(
@@ -249,8 +233,6 @@ def batch_rewrite_for_multiple_regions(
 ) -> List[Dict]:
     """
     Generate localisations for multiple regions in parallel.
-    Useful for teachers who want to generate a set of examples
-    for a diverse classroom.
     """
     import concurrent.futures
 
@@ -294,25 +276,14 @@ def rewrite_with_local_context(
     2. Generate localised version via LLM
     3. Validate mathematical invariance (numbers preserved)
     4. Return enriched response with CLT analysis
-
-    Args:
-        original_text: The textbook paragraph, problem, or example to rewrite
-        concept:       The educational concept being illustrated
-        subject:       Subject domain
-        class_level:   Class level (9, 10, 11, 12)
-        region_key:    Region identifier matching a regional_context/*.json file
-        max_retries:   Retry attempts if JSON parsing or invariance check fails
-
-    Returns:
-        Dict with rewritten_text, changes_made, why_this_helps, and validation metadata
     """
-    context = load_regional_context(region_key)
+    context     = load_regional_context(region_key)
     region_name = context.get('region', region_key)
 
     temperatures = [0.7, 0.85, 0.6]
 
     for attempt in range(max_retries + 1):
-        temp = temperatures[min(attempt, len(temperatures)-1)]
+        temp = temperatures[min(attempt, len(temperatures) - 1)]
 
         try:
             logger.info(
@@ -324,7 +295,7 @@ def rewrite_with_local_context(
                 model=settings.MODEL_NAME,
                 messages=[
                     {'role': 'system', 'content': HYPERLOCAL_SYSTEM_PROMPT},
-                    {'role': 'user', 'content': build_hyperlocal_prompt(
+                    {'role': 'user',   'content': build_hyperlocal_prompt(
                         original_text, concept, subject, class_level, context
                     )},
                 ],
@@ -333,11 +304,10 @@ def rewrite_with_local_context(
                 timeout=40,
             )
 
-            raw = response.choices[0].message.content.strip()
+            raw     = response.choices[0].message.content.strip()
             elapsed = time.time() - t0
             logger.info(f"LLM response in {elapsed:.1f}s ({len(raw)} chars)")
 
-            # Parse JSON
             result = _extract_hyperlocal_json(raw)
             if result is None:
                 logger.warning(f"Attempt {attempt+1}: JSON parsing failed")
@@ -354,22 +324,22 @@ def rewrite_with_local_context(
 
             if not invariance['invariant'] and attempt < max_retries:
                 logger.warning(
-                    f"Mathematical invariance FAILED (missing: {invariance['missing_numbers']}). Retrying."
+                    f"Mathematical invariance FAILED "
+                    f"(missing: {invariance['missing_numbers']}). Retrying."
                 )
                 time.sleep(0.5)
                 continue
 
             # Enrich response
-            result['original_text'] = original_text
-            result['region'] = region_name
-            result['region_key'] = region_key
+            result['original_text']          = original_text
+            result['region']                 = region_name
+            result['region_key']             = region_key
             result['mathematical_invariance'] = invariance
-            result['class_level'] = class_level
-            result['subject'] = subject
-            result['concept'] = concept
-            result['language_hint'] = context.get('language_hint', 'Hindi/English')
+            result['class_level']            = class_level
+            result['subject']                = subject
+            result['concept']                = concept
+            result['language_hint']          = context.get('language_hint', 'Hindi/English')
 
-            # Ensure required fields
             if 'changes_made' not in result or not isinstance(result['changes_made'], list):
                 result['changes_made'] = []
             if 'why_this_helps' not in result or not result['why_this_helps']:
@@ -403,7 +373,7 @@ def _extract_hyperlocal_json(raw: str) -> Optional[Dict]:
     except json.JSONDecodeError:
         pass
 
-    # Find first complete JSON object
+    # Find first complete JSON object via brace matching
     brace_depth, start_idx = 0, None
     for i, ch in enumerate(cleaned):
         if ch == '{':
@@ -418,10 +388,11 @@ def _extract_hyperlocal_json(raw: str) -> Optional[Dict]:
                 except json.JSONDecodeError:
                     pass
 
-    # Repair and retry
+    # Attempt repair of common LLM JSON formatting errors
     try:
         repaired = re.sub(r',\s*([}\]])', r'\1', cleaned)
         repaired = repaired.replace('\u201c', '"').replace('\u201d', '"')
+        repaired = repaired.replace('\u2018', "'").replace('\u2019', "'")
         return json.loads(repaired)
     except Exception:
         return None
@@ -431,11 +402,21 @@ def _fallback_hyperlocal(original_text: str, region_name: str, error_info: str) 
     """Graceful degradation when generation fails."""
     logger.warning(f"Using fallback for hyperlocal rewrite ({region_name})")
     return {
-        'rewritten_text': original_text + f"\n\n[Note: This example would be adapted to {region_name} context in a full version.]",
-        'changes_made': [],
-        'why_this_helps': f"Local context from {region_name} makes this concept more accessible.",
-        'cognitive_load_reduction': "Familiar context reduces the mental effort needed to decode the problem setting.",
+        'rewritten_text': (
+            original_text +
+            f"\n\n[Note: This example would be adapted to {region_name} context in a full version.]"
+        ),
+        'changes_made':      [],
+        'why_this_helps':    f"Local context from {region_name} makes this concept more accessible.",
+        'cognitive_load_reduction': (
+            "Familiar context reduces the mental effort needed to decode the problem setting."
+        ),
         'cultural_authenticity_notes': 'Localisation could not be completed automatically.',
-        'mathematical_invariance': {'invariant': True, 'missing_numbers': [], 'extra_numbers': [], 'warning': None},
+        'mathematical_invariance': {
+            'invariant':        True,
+            'missing_numbers':  [],
+            'extra_numbers':    [],
+            'warning':          None,
+        },
         '_generation_note': f'fallback_due_to_error: {error_info[:100]}',
     }

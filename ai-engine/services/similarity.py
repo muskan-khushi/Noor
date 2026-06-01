@@ -85,6 +85,9 @@ DOMAIN_STOPWORDS = {
 BM25_K1 = 1.5   # term frequency saturation
 BM25_B  = 0.75  # length normalisation
 
+# Baseline exam frequency for topics without specific patterns
+BASELINE_EXAM_FREQUENCY = 0.70
+
 # Exam-frequency weights: P(topic appears in exam) estimated from 2018-2024 papers
 # Keys are regex patterns matching topic strings
 EXAM_FREQUENCY_WEIGHTS = {
@@ -122,9 +125,7 @@ def tokenize(text: str) -> List[str]:
     removes stopwords, lowercases, and applies minimal stemming for common
     chemistry/physics suffixes.
     """
-    # Lowercase but preserve acronym structure for later
     text = text.lower()
-    # Split on whitespace and non-alphanumeric (keep hyphens inside words)
     tokens = re.findall(r'[a-z0-9]+(?:-[a-z0-9]+)*', text)
     result = []
     for tok in tokens:
@@ -196,8 +197,6 @@ def extract_concept_ngrams(text: str, n: int = 2) -> set:
     """
     Extract character n-grams from domain keywords only.
     n=2 (bigrams) balances specificity vs recall for chemical terminology.
-    e.g. "Arrhenius equation" -> {"ar", "rr", "rh", "he", "en", ...}
-    Works well for: chemical names, reaction types, theorem names.
     """
     tokens = tokenize(text)
     keyword_text = ' '.join(tokens)
@@ -211,8 +210,6 @@ def ngram_jaccard(text_a: str, text_b: str, n: int = 2) -> float:
     """
     Jaccard similarity on character bigrams of domain keywords.
     J(A,B) = |A ∩ B| / |A ∪ B|
-    Handles spelling variations and compound word differences better than
-    exact token matching.
     """
     a = extract_concept_ngrams(text_a, n)
     b = extract_concept_ngrams(text_b, n)
@@ -231,10 +228,10 @@ def get_exam_frequency_weight(topic: str) -> float:
     """
     Returns estimated probability that this topic appears in a national exam
     based on pattern matching against 2018-2024 exam paper analysis.
-    Returns 0.7 (baseline) if no specific pattern matches.
+    Returns BASELINE_EXAM_FREQUENCY if no specific pattern matches.
     """
     topic_lower = topic.lower()
-    best_weight = 0.70  # baseline: most topics appear with ~70% frequency
+    best_weight = BASELINE_EXAM_FREQUENCY
     for pattern, weight in EXAM_FREQUENCY_WEIGHTS.items():
         if re.search(pattern, topic_lower):
             best_weight = max(best_weight, weight)
@@ -259,17 +256,12 @@ def compute_confidence_interval(
     """
     95% confidence interval for the best-match score.
     Uses the top-k dense scores to estimate score variance.
-    A narrow CI (high confidence) means the dense model is certain about
-    coverage/non-coverage. A wide CI suggests borderline cases.
-
-    Returns: (lower_bound, upper_bound) of the 95% CI.
     """
     if len(dense_scores) == 0:
         return (0.0, 0.0)
     top_scores = np.sort(dense_scores)[-min(top_k, len(dense_scores)):]
     mean = float(np.mean(top_scores))
     std = float(np.std(top_scores))
-    # Using t-distribution approximation for small samples
     margin = 1.96 * std / math.sqrt(len(top_scores))
     return (max(0.0, mean - margin), min(1.0, mean + margin))
 
@@ -311,21 +303,9 @@ def find_gaps(
        c. Bigram Jaccard: compare concept keyword n-grams.
        d. Fuse with weighted harmonic mean → single alignment score.
     3. Topics below GAP_THRESHOLD are flagged as gaps.
-    4. Each gap is enriched with:
-       — confidence interval (how certain are we about this gap?)
-       — exam_frequency_weight (how often does this appear in exams?)
-       — a composite priority_score that ranks gaps for study order
-    5. Final sort: by composite_priority_score (ascending = highest priority).
-
-    Args:
-        state_chunks:        List of text chunks from student's state board syllabus
-        state_embeddings:    numpy array (N_state × 384) of chunk embeddings
-        national_chunks:     List of topic strings from target national exam
-        national_embeddings: numpy array (N_national × 384) of topic embeddings
-        max_gaps:            Maximum number of gaps to return (caps output for speed)
-
-    Returns:
-        List of gap dicts, sorted by composite priority (most critical first).
+    4. Each gap is enriched with confidence interval, exam_frequency_weight,
+       and a composite priority_score that ranks gaps for study order.
+    5. Final sort: by composite_priority_score (descending = highest priority).
     """
     if len(state_embeddings) == 0 or len(national_embeddings) == 0:
         logger.warning("Empty embeddings received — returning no gaps")
@@ -382,8 +362,6 @@ def find_gaps(
 
         # ── 2g. Composite priority score ─────────────────────────────────
         # Lower fused_score + higher exam_freq = more critical
-        # Formula: (1 - fused_score) * exam_freq
-        # Range: [0, 1] where 1.0 = definitely missing, definitely in exam
         composite = (1.0 - fused_score) * exam_freq
 
         gaps.append({
@@ -431,7 +409,6 @@ def _deduplicate_gaps(gaps: List[Dict], jaccard_threshold: float = 0.75) -> List
     if len(gaps) <= 1:
         return gaps
 
-    # Build clusters: greedy nearest-neighbour
     kept = []
     seen_ngrams = []
 
@@ -473,12 +450,12 @@ def compute_alignment_report(
       alignment_score:    % of national topics covered by state syllabus
       weighted_alignment: alignment_score weighted by exam_frequency
       coverage_by_band:   {CRITICAL: N, HIGH: N, MEDIUM: N, COVERED: N}
-      expected_marks_at_risk: estimated marks affected by gaps (heuristic)
+      marks_at_risk_estimate: estimated marks affected by gaps (heuristic)
+      study_hours_estimate:   rough hours needed to bridge all gaps
 
-    The 'expected_marks_at_risk' is computed from the exam_frequency weight
+    The 'marks_at_risk_estimate' is computed from the exam_frequency weight
     and a marks_per_topic estimate (NEET: 4 marks/MCQ; JEE: 4 marks/MCQ;
-    CUET: 5 marks/MCQ). This is a pedagogical heuristic to communicate
-    urgency, not a precise prediction.
+    CUET: 5 marks/MCQ). This is a pedagogical heuristic, not a precise prediction.
     """
     marks_per_topic = {'NEET': 4, 'JEE Mains': 4, 'CUET': 5}.get(exam, 4)
 
@@ -486,15 +463,15 @@ def compute_alignment_report(
     num_covered = max(0, total_national_topics - num_gaps)
     alignment_score = num_covered / max(total_national_topics, 1)
 
-    # Frequency-weighted alignment
-    total_freq_weight = sum(
-        get_exam_frequency_weight(t)
-        for _ in range(total_national_topics)   # approx
-    )
+    # Frequency-weighted alignment.
+    # Use BASELINE_EXAM_FREQUENCY as the per-topic average weight since we
+    # don't have the full national topic list here — gaps already carry their
+    # individual exam_frequency values.
+    total_freq_weight = total_national_topics * BASELINE_EXAM_FREQUENCY
     gap_freq_weight = sum(g['exam_frequency'] for g in gaps)
     weighted_alignment = 1.0 - (gap_freq_weight / max(total_freq_weight, 1))
 
-    # Marks at risk: each critical gap × exam_frequency × marks_per_topic
+    # Marks at risk: each critical/high gap × exam_frequency × marks_per_topic
     marks_at_risk = sum(
         g['exam_frequency'] * marks_per_topic
         for g in gaps
@@ -508,7 +485,7 @@ def compute_alignment_report(
         'COVERED':  num_covered,
     }
 
-    # Compute a study_hours_estimate: rough heuristic
+    # Study hours estimate:
     # CRITICAL gap: ~3h to learn from scratch
     # HIGH: ~1.5h to bridge
     # MEDIUM: ~0.5h to review
@@ -519,14 +496,14 @@ def compute_alignment_report(
     )
 
     return {
-        'alignment_score':       round(alignment_score * 100, 1),      # percent
-        'weighted_alignment':    round(weighted_alignment * 100, 1),    # percent
-        'total_national_topics': total_national_topics,
-        'total_gaps':            num_gaps,
-        'coverage_by_band':      coverage_by_band,
+        'alignment_score':        round(alignment_score * 100, 1),      # percent
+        'weighted_alignment':     round(weighted_alignment * 100, 1),    # percent
+        'total_national_topics':  total_national_topics,
+        'total_gaps':             num_gaps,
+        'coverage_by_band':       coverage_by_band,
         'marks_at_risk_estimate': round(marks_at_risk, 0),
         'study_hours_estimate':   round(study_hours, 1),
-        'exam':                  exam,
-        'subject':               subject,
-        'board':                 board,
+        'exam':                   exam,
+        'subject':                subject,
+        'board':                  board,
     }

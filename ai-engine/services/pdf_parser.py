@@ -26,9 +26,9 @@ Text Quality Scoring (TQS):
         + 0.2 * structure_preservation
 
 Where:
-  word_ratio:           fraction of tokens that are real English/Hindi words
-  line_coherence:       fraction of lines that end naturally (not mid-word)
-  vocabulary_coverage:  fraction of expected domain terms present
+  word_ratio:             fraction of tokens that are real English/Hindi words
+  line_coherence:         fraction of lines that end naturally (not mid-word)
+  vocabulary_coverage:    fraction of expected domain terms present
   structure_preservation: presence of headers, numbering, topic structure
 """
 
@@ -64,10 +64,10 @@ SCIENCE_VOCABULARY = {
 
 # Artifact patterns that indicate bad extraction
 ARTIFACT_PATTERNS = [
-    r'\x00+',                    # null bytes
-    r'[^\x00-\x7F]{5,}',         # long non-ASCII runs (garbled encoding)
-    r'\b[A-Z]{15,}\b',           # extremely long all-caps (likely OCR garbage)
-    r'(?:\S){40,}',              # runs of non-whitespace > 40 chars (no spaces)
+    r'\x00+',                     # null bytes
+    r'[^\x00-\x7F]{5,}',          # long non-ASCII runs (garbled encoding)
+    r'\b[A-Z]{15,}\b',            # extremely long all-caps (likely OCR garbage)
+    r'(?:\S){40,}',               # runs of non-whitespace > 40 chars (no spaces)
     r'\d{1,2}\s+\d{1,2}\s+\d{4}', # date artifacts from headers/footers
 ]
 
@@ -136,9 +136,7 @@ def _extract_standard(pdf) -> str:
         text = page.extract_text(x_tolerance=3, y_tolerance=3)
         if not text:
             continue
-        # Remove probable headers/footers (short lines at top/bottom 8%)
         lines = text.split('\n')
-        page_height = page.height
         if len(lines) > 4:
             lines = lines[1:-1]  # crude header/footer strip
         pages_text.append('\n'.join(lines))
@@ -154,9 +152,6 @@ def _extract_column_aware(pdf) -> str:
     Handles multi-column layouts by detecting column boundaries from
     x-coordinate distribution of words, then extracting each column
     independently before joining.
-
-    Column detection: if the x-coordinate distribution of words is bimodal
-    (two clusters separated by a gap > 15% of page width), treat as 2-column.
     """
     pages_text = []
     for page in pdf.pages:
@@ -171,17 +166,15 @@ def _extract_column_aware(pdf) -> str:
         col_boundary = None
         for i in range(len(x_positions) - 1):
             gap = x_positions[i+1] - x_positions[i]
-            if gap > page_width * 0.15:  # gap > 15% of page = column separator
+            if gap > page_width * 0.15:
                 col_boundary = (x_positions[i] + x_positions[i+1]) / 2
                 break
 
         if col_boundary:
-            # Extract left and right columns separately
             left_words  = [w for w in words if w['x1'] <= col_boundary]
             right_words = [w for w in words if w['x0'] >= col_boundary]
 
             def words_to_text(word_list):
-                # Sort by y (top to bottom), then x (left to right)
                 word_list.sort(key=lambda w: (round(w['top'] / 5) * 5, w['x0']))
                 lines, current_y, current_line = [], None, []
                 for w in word_list:
@@ -200,7 +193,6 @@ def _extract_column_aware(pdf) -> str:
             right_text = words_to_text(right_words)
             pages_text.append(left_text + '\n' + right_text)
         else:
-            # Single column: standard extraction
             text = page.extract_text(x_tolerance=3, y_tolerance=3)
             if text:
                 pages_text.append(text)
@@ -216,7 +208,6 @@ def _extract_tables(pdf) -> str:
     """
     Extracts topics from table-structured syllabi.
     Many state board PDFs present topics in Unit | Topic | Sub-topic tables.
-    This strategy flattens those tables into continuous text.
     """
     all_text = []
     for page in pdf.pages:
@@ -225,14 +216,12 @@ def _extract_tables(pdf) -> str:
             for table in tables:
                 for row in table:
                     if row:
-                        # Join non-empty cells with space
                         row_text = ' — '.join(
                             cell.strip() for cell in row
                             if cell and cell.strip()
                         )
                         if row_text and len(row_text) > 10:
                             all_text.append(row_text)
-        # Also extract any text outside tables
         text = page.extract_text(x_tolerance=3, y_tolerance=3)
         if text:
             all_text.append(text)
@@ -250,7 +239,7 @@ def clean_extracted_text(raw: str) -> str:
     Pass 2: Fix common OCR errors in scientific text
     Pass 3: Normalise whitespace while preserving structure
     Pass 4: Remove non-content lines (page numbers, headers, watermarks)
-c    """
+    """
     if not raw:
         raise ValueError("No text was extracted from PDF")
 
@@ -276,16 +265,15 @@ c    """
         text = re.sub(pattern, replacement, text)
 
     # Pass 3: Normalise whitespace (preserve paragraph breaks)
-    text = re.sub(r'[ \t]+', ' ', text)       # collapse horizontal whitespace
-    text = re.sub(r'\n{3,}', '\n\n', text)    # max 2 consecutive newlines
-    text = re.sub(r'^\s+', '', text, flags=re.MULTILINE)  # strip leading spaces
+    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r'^\s+', '', text, flags=re.MULTILINE)
 
     # Pass 4: Remove non-content lines
     lines = text.split('\n')
     cleaned_lines = []
     for line in lines:
         stripped = line.strip()
-        # Skip: empty, page numbers, single chars, URLs, very short noise lines
         if not stripped:
             continue
         if re.match(r'^[\d\s\-–—|]+$', stripped) and len(stripped) < 20:
@@ -304,7 +292,9 @@ c    """
     text = text.strip()
 
     if not text:
-        raise ValueError("No usable text could be extracted — PDF may be a scanned image without OCR layer")
+        raise ValueError(
+            "No usable text could be extracted — PDF may be a scanned image without OCR layer"
+        )
 
     return text
 
@@ -363,7 +353,7 @@ def extract_text_from_pdf(file_path: str) -> str:
 
     Raises:
         ValueError: If no strategy yields acceptable quality (likely scanned
-                    PDF without OCR layer — user should use a text-based PDF).
+                    PDF without OCR layer).
     """
     try:
         import pdfplumber
@@ -377,13 +367,12 @@ def extract_text_from_pdf(file_path: str) -> str:
             if len(pdf.pages) == 0:
                 raise ValueError("PDF has no pages")
 
-            # Detect structure for primary strategy selection
             structure = detect_pdf_structure(pdf)
             logger.info(f"Detected PDF structure: {structure}")
 
             # Always try standard extraction
             try:
-                std_text = _extract_standard(pdf)
+                std_text    = _extract_standard(pdf)
                 std_cleaned = clean_extracted_text(std_text)
                 std_quality = score_text_quality(std_cleaned)
                 results['standard'] = (std_cleaned, std_quality)
@@ -394,7 +383,7 @@ def extract_text_from_pdf(file_path: str) -> str:
             # Try column-aware if structure suggests it
             if structure in ('multi_column', 'mixed'):
                 try:
-                    col_text = _extract_column_aware(pdf)
+                    col_text    = _extract_column_aware(pdf)
                     col_cleaned = clean_extracted_text(col_text)
                     col_quality = score_text_quality(col_cleaned)
                     results['column_aware'] = (col_cleaned, col_quality)
@@ -405,7 +394,7 @@ def extract_text_from_pdf(file_path: str) -> str:
             # Try table extraction if structure suggests it
             if structure in ('table_heavy', 'mixed'):
                 try:
-                    tbl_text = _extract_tables(pdf)
+                    tbl_text    = _extract_tables(pdf)
                     tbl_cleaned = clean_extracted_text(tbl_text)
                     tbl_quality = score_text_quality(tbl_cleaned)
                     results['table'] = (tbl_cleaned, tbl_quality)
@@ -424,12 +413,11 @@ def extract_text_from_pdf(file_path: str) -> str:
         )
 
     # Select strategy with best quality
-    best_strategy = max(results.items(), key=lambda x: x[1][1])
-    strategy_name, (best_text, best_quality) = best_strategy[0], best_strategy[1]
+    best_strategy_name = max(results, key=lambda k: results[k][1])
+    best_text, best_quality = results[best_strategy_name]
 
-    logger.info(f"Selected strategy '{strategy_name}' with quality={best_quality:.3f}")
+    logger.info(f"Selected strategy '{best_strategy_name}' with quality={best_quality:.3f}")
 
-    # Minimum quality threshold
     if best_quality < 0.20:
         raise ValueError(
             f"PDF text quality too low (score={best_quality:.2f}). "
