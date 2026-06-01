@@ -68,7 +68,11 @@ export default function GapFinderPage() {
         </p>
       </div>
 
-      {loadError && <ErrorBanner message={loadError} onDismiss={() => setLoadError('')} />}
+      {loadError && (
+        <div style={{ marginBottom: 16 }}>
+          <ErrorBanner message={loadError} />
+        </div>
+      )}
 
       <div className="fade-up-1 glass" style={{ borderRadius: 24, padding: '34px' }}>
         {result
