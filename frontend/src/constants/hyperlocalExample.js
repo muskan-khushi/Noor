@@ -1,10 +1,11 @@
-/** Canonical demo problem for the hyperlocal localiser */
+/** Canonical demo problem for the hyperlocal localiser (Physics — unfamiliar context) */
 export const HYPERLOCAL_EXAMPLE = {
   text:
-    'A car travels from Delhi to Agra, a distance of 200 km, at a constant speed of 50 km/h. ' +
-    'How long does the journey take?',
-  concept: 'Speed, distance and time',
-  subject: 'Mathematics',
+    'A ski resort in Norway installs large reflective panels to direct sunlight toward icy pathways on the slopes. ' +
+    'Sunlight strikes a flat reflective panel at an angle of 42° to the normal. ' +
+    'Using the laws of reflection, determine the angle of reflection.',
+  concept: 'Laws of reflection — angle of incidence and reflection',
+  subject: 'Physics',
   class_level: '11',
   region_key: 'rajasthan',
 };
