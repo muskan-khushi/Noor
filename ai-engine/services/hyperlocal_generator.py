@@ -41,12 +41,15 @@ import json
 import logging
 import re
 import time
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from openai import OpenAI
 from config import settings
 
 logger = logging.getLogger(__name__)
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 client = OpenAI(
     api_key=settings.GROQ_API_KEY,
@@ -66,7 +69,7 @@ def load_regional_context(region_key: str) -> dict:
     if region_key in _region_cache:
         return _region_cache[region_key]
 
-    path = f'data/regional_context/{region_key}.json'
+    path = BASE_DIR / 'data' / 'regional_context' / f'{region_key}.json'
     try:
         with open(path, 'r', encoding='utf-8') as f:
             ctx = json.load(f)
@@ -148,7 +151,10 @@ You understand that a student from rural Rajasthan who has never left their dist
 - Weighs grain in quintals and ser, not kilograms from textbook problems
 - Knows millet prices, not stock market returns
 
-Your rewrites make the mathematics EASIER to access, not easier. Same difficulty, different world."""
+Your rewrites make the mathematics EASIER to access, not easier. Same difficulty, different world.
+
+CRITICAL: Never replace numeric values from the problem with "real" regional distances from context data.
+If the problem says 200 km, the rewrite must still say 200 km — only place names and cultural wrappers change."""
 
 
 def build_hyperlocal_prompt(
@@ -172,6 +178,8 @@ def build_hyperlocal_prompt(
     distances    = context.get('distances', [])[:3]
     sample_hint  = context.get('sample_rewrite_hint', '')
     water_sources = context.get('water_sources', [])[:3]
+    locked_numbers = extract_numbers(original_text)
+    locked_list = ', '.join(locked_numbers) if locked_numbers else '(none — still do not invent new problem numbers)'
 
     return f"""TASK: Rewrite the following Class {class_level} {subject} content for a student from {region}.
 
@@ -190,26 +198,28 @@ REGIONAL CONTEXT FOR {region.upper()}:
 • Markets: {', '.join(markets) if markets else 'local weekly market'}
 • Animals: {', '.join(animals)}
 • Water: {', '.join(water_sources) if water_sources else 'local sources'}
-• Real distances: {', '.join(distances) if distances else 'local routes'}
-• Hint: {sample_hint}
+• Regional place names (for setting only): {', '.join(geography[:2])}
+• Reference routes (DO NOT paste these distances into the problem): {', '.join(distances) if distances else 'n/a'}
+• Style hint: {sample_hint}
+
+NUMBERS THAT MUST APPEAR UNCHANGED (copy every digit exactly): {locked_list}
 
 REWRITING RULES:
-1. ALL NUMBERS MUST BE PRESERVED EXACTLY — never change 15%, Rs.500, 60 km/h, 3 litres
-2. Replace generic names (Ramesh, Priya) with names common in {region}
-3. Replace generic locations (Delhi, highway) with specific {region} places
-4. Replace goods/items with region-appropriate equivalents of similar value
-5. Replace occupations and economic activities with those from the context above
-6. If the problem involves a vehicle, replace with region-appropriate transport
-7. If the problem involves food/goods, replace with region-specific items
-8. The mathematical OPERATION must remain identical (same formula, same structure)
-9. The rewritten text should be roughly the same length as the original
+1. EVERY number in the list above must appear in rewritten_text with the same digits (200 stays 200, 50 stays 50)
+2. Do NOT substitute problem distances with regional catalog distances (e.g. never change 200 km to 285 km)
+3. Replace generic names (Ramesh, Priya) with names common in {region}
+4. Replace generic city names with {region} places — keep the same numeric distance/speed/quantity
+5. Replace goods/items with region-appropriate equivalents of similar value (not different counts or prices)
+6. If the problem involves a vehicle, use region-appropriate transport but keep the same speed number
+7. The mathematical OPERATION must remain identical (same formula, same structure)
+8. The rewritten text should be roughly the same length as the original
 
 WHAT TO RETURN (JSON only, no markdown):
 {{
   "rewritten_text": "The complete rewritten version",
   "changes_made": [
-    "Delhi-Agra highway → Jodhpur-Jaisalmer desert road",
-    "car at 60 km/h → jeep at 60 km/h",
+    "Delhi → Jodhpur (distance still 200 km)",
+    "car → jeep (speed still 50 km/h)",
     "Ramesh → Ranjeet Singh"
   ],
   "why_this_helps": "One sentence from a teacher's perspective: why this version helps this student specifically",
@@ -218,6 +228,118 @@ WHAT TO RETURN (JSON only, no markdown):
 }}
 
 RESPOND ONLY WITH VALID JSON. DO NOT CHANGE ANY NUMBERS. DO NOT ADD MARKDOWN FENCES."""
+
+
+def build_invariance_correction(invariance: Dict, original_text: str) -> str:
+    """Extra user-message block when a prior attempt changed problem numbers."""
+    locked = extract_numbers(original_text)
+    return f"""
+
+CORRECTION — YOUR PREVIOUS ATTEMPT FAILED VALIDATION:
+{invariance.get('warning') or 'Numbers were changed.'}
+
+You MUST include these exact numeric tokens in rewritten_text: {', '.join(locked) or 'none'}
+Do not add new distances or speeds. Only change names, places, occupations, and cultural wrappers.
+"""
+
+
+def build_conservative_prompt(
+    original_text: str,
+    concept: str,
+    subject: str,
+    class_level: str,
+    context: dict,
+) -> str:
+    """Minimal prompt for final attempt — names/places only, numbers locked."""
+    region = context.get('region', 'the region')
+    locked = ', '.join(extract_numbers(original_text)) or 'all original numbers'
+    return f"""Rewrite for a Class {class_level} {subject} student from {region}.
+Concept: {concept}
+
+ORIGINAL (preserve every number exactly — {locked}):
+{original_text}
+
+Change ONLY: person names, city/place names, vehicle type labels, and cultural references.
+Do NOT change any digit, km, km/h, Rs., %, or quantity.
+
+Return JSON only:
+{{"rewritten_text":"...","changes_made":["..."],"why_this_helps":"...","cognitive_load_reduction":"...","cultural_authenticity_notes":"..."}}"""
+
+
+def _call_hyperlocal_llm(
+    user_content: str,
+    temperature: float = 0.7,
+) -> str:
+    response = client.chat.completions.create(
+        model=settings.MODEL_NAME,
+        messages=[
+            {'role': 'system', 'content': HYPERLOCAL_SYSTEM_PROMPT},
+            {'role': 'user', 'content': user_content},
+        ],
+        temperature=temperature,
+        max_tokens=2000,
+        timeout=40,
+    )
+    return response.choices[0].message.content.strip()
+
+
+def _enrich_result(
+    result: Dict,
+    original_text: str,
+    region_name: str,
+    region_key: str,
+    class_level: str,
+    subject: str,
+    concept: str,
+    context: dict,
+    invariance: Dict,
+) -> Dict:
+    result['original_text'] = original_text
+    result['region'] = region_name
+    result['region_key'] = region_key
+    result['mathematical_invariance'] = invariance
+    result['class_level'] = class_level
+    result['subject'] = subject
+    result['concept'] = concept
+    result['language_hint'] = context.get('language_hint', 'Hindi/English')
+    result['success'] = True
+
+    if 'changes_made' not in result or not isinstance(result['changes_made'], list):
+        result['changes_made'] = []
+    if not result.get('why_this_helps'):
+        result['why_this_helps'] = (
+            f"This version uses {region_name} context to reduce extraneous "
+            f"cognitive load, letting the student focus on the {concept} concept."
+        )
+    if not result.get('cognitive_load_reduction'):
+        result['cognitive_load_reduction'] = (
+            "Replaces unfamiliar geographic and economic context with familiar local equivalents."
+        )
+    return result
+
+
+def _failure_response(
+    original_text: str,
+    region_name: str,
+    region_key: str,
+    message: str,
+    invariance: Optional[Dict] = None,
+) -> Dict:
+    return {
+        'success': False,
+        'error': message,
+        'original_text': original_text,
+        'region': region_name,
+        'region_key': region_key,
+        'rewritten_text': None,
+        'changes_made': [],
+        'mathematical_invariance': invariance or {
+            'invariant': False,
+            'missing_numbers': [],
+            'extra_numbers': [],
+            'warning': message,
+        },
+    }
 
 
 # ──────────────────────────────────────────────────────────────
@@ -237,6 +359,7 @@ def batch_rewrite_for_multiple_regions(
     import concurrent.futures
 
     results = []
+    errors = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=min(3, len(region_keys))) as executor:
         futures = {
             executor.submit(
@@ -249,9 +372,18 @@ def batch_rewrite_for_multiple_regions(
             region_key = futures[future]
             try:
                 result = future.result()
-                results.append(result)
+                if result.get('success') is False:
+                    errors.append(f"{region_key}: {result.get('error', 'failed')}")
+                else:
+                    results.append(result)
             except Exception as e:
                 logger.error(f"Batch rewrite failed for {region_key}: {e}")
+                errors.append(f"{region_key}: {e}")
+
+    if not results and errors:
+        raise ValueError(
+            "Batch localisation failed for all regions. " + "; ".join(errors[:3])
+        )
 
     return results
 
@@ -280,86 +412,94 @@ def rewrite_with_local_context(
     context     = load_regional_context(region_key)
     region_name = context.get('region', region_key)
 
-    temperatures = [0.7, 0.85, 0.6]
+    temperatures = [0.55, 0.4, 0.3]
+    base_prompt = build_hyperlocal_prompt(
+        original_text, concept, subject, class_level, context
+    )
+    last_invariance = None
 
     for attempt in range(max_retries + 1):
         temp = temperatures[min(attempt, len(temperatures) - 1)]
+        user_prompt = base_prompt
+        if last_invariance and not last_invariance.get('invariant'):
+            user_prompt += build_invariance_correction(last_invariance, original_text)
 
         try:
             logger.info(
                 f"Hyperlocal rewrite for '{region_name}' (attempt {attempt+1}, T={temp})"
             )
             t0 = time.time()
-
-            response = client.chat.completions.create(
-                model=settings.MODEL_NAME,
-                messages=[
-                    {'role': 'system', 'content': HYPERLOCAL_SYSTEM_PROMPT},
-                    {'role': 'user',   'content': build_hyperlocal_prompt(
-                        original_text, concept, subject, class_level, context
-                    )},
-                ],
-                temperature=temp,
-                max_tokens=2000,
-                timeout=40,
-            )
-
-            raw     = response.choices[0].message.content.strip()
-            elapsed = time.time() - t0
-            logger.info(f"LLM response in {elapsed:.1f}s ({len(raw)} chars)")
+            raw = _call_hyperlocal_llm(user_prompt, temperature=temp)
+            logger.info(f"LLM response in {time.time() - t0:.1f}s ({len(raw)} chars)")
 
             result = _extract_hyperlocal_json(raw)
-            if result is None:
+            if result is None or not result.get('rewritten_text'):
                 logger.warning(f"Attempt {attempt+1}: JSON parsing failed")
                 if attempt < max_retries:
                     time.sleep(0.5)
                     continue
-                result = _fallback_hyperlocal(original_text, region_name, raw)
+                return _failure_response(
+                    original_text, region_name, region_key,
+                    'Could not parse the AI response. Please try again.',
+                )
 
-            # Validate mathematical invariance
-            invariance = validate_mathematical_invariance(
+            last_invariance = validate_mathematical_invariance(
                 original_text,
-                result.get('rewritten_text', '')
+                result.get('rewritten_text', ''),
             )
 
-            if not invariance['invariant'] and attempt < max_retries:
+            if not last_invariance['invariant'] and attempt < max_retries:
                 logger.warning(
                     f"Mathematical invariance FAILED "
-                    f"(missing: {invariance['missing_numbers']}). Retrying."
+                    f"(missing: {last_invariance['missing_numbers']}). Retrying."
                 )
                 time.sleep(0.5)
                 continue
 
-            # Enrich response
-            result['original_text']          = original_text
-            result['region']                 = region_name
-            result['region_key']             = region_key
-            result['mathematical_invariance'] = invariance
-            result['class_level']            = class_level
-            result['subject']                = subject
-            result['concept']                = concept
-            result['language_hint']          = context.get('language_hint', 'Hindi/English')
-
-            if 'changes_made' not in result or not isinstance(result['changes_made'], list):
-                result['changes_made'] = []
-            if 'why_this_helps' not in result or not result['why_this_helps']:
-                result['why_this_helps'] = (
-                    f"This version uses {region_name} context to reduce extraneous "
-                    f"cognitive load, letting the student focus on the {concept} concept."
+            if last_invariance['invariant']:
+                return _enrich_result(
+                    result, original_text, region_name, region_key,
+                    class_level, subject, concept, context, last_invariance,
                 )
-            if 'cognitive_load_reduction' not in result:
-                result['cognitive_load_reduction'] = (
-                    "Replaces unfamiliar geographic and economic context with familiar local equivalents."
-                )
-
-            return result
 
         except Exception as e:
             logger.warning(f"Attempt {attempt+1} exception: {e}")
             if attempt < max_retries:
                 time.sleep(1.0)
                 continue
-            return _fallback_hyperlocal(original_text, region_name, str(e))
+            return _failure_response(
+                original_text, region_name, region_key,
+                f'AI service error: {str(e)[:200]}',
+            )
+
+    # Final conservative pass — names/places only
+    try:
+        logger.info(f"Conservative hyperlocal rewrite for '{region_name}'")
+        raw = _call_hyperlocal_llm(
+            build_conservative_prompt(
+                original_text, concept, subject, class_level, context
+            ),
+            temperature=0.2,
+        )
+        result = _extract_hyperlocal_json(raw)
+        if result and result.get('rewritten_text'):
+            last_invariance = validate_mathematical_invariance(
+                original_text, result['rewritten_text'],
+            )
+            if last_invariance['invariant']:
+                return _enrich_result(
+                    result, original_text, region_name, region_key,
+                    class_level, subject, concept, context, last_invariance,
+                )
+    except Exception as e:
+        logger.warning(f"Conservative rewrite failed: {e}")
+
+    return _failure_response(
+        original_text, region_name, region_key,
+        'Could not localise this text while keeping all numbers unchanged. '
+        'Try a shorter problem or re-run.',
+        last_invariance,
+    )
 
 
 def _extract_hyperlocal_json(raw: str) -> Optional[Dict]:
@@ -397,26 +537,3 @@ def _extract_hyperlocal_json(raw: str) -> Optional[Dict]:
     except Exception:
         return None
 
-
-def _fallback_hyperlocal(original_text: str, region_name: str, error_info: str) -> Dict:
-    """Graceful degradation when generation fails."""
-    logger.warning(f"Using fallback for hyperlocal rewrite ({region_name})")
-    return {
-        'rewritten_text': (
-            original_text +
-            f"\n\n[Note: This example would be adapted to {region_name} context in a full version.]"
-        ),
-        'changes_made':      [],
-        'why_this_helps':    f"Local context from {region_name} makes this concept more accessible.",
-        'cognitive_load_reduction': (
-            "Familiar context reduces the mental effort needed to decode the problem setting."
-        ),
-        'cultural_authenticity_notes': 'Localisation could not be completed automatically.',
-        'mathematical_invariance': {
-            'invariant':        True,
-            'missing_numbers':  [],
-            'extra_numbers':    [],
-            'warning':          None,
-        },
-        '_generation_note': f'fallback_due_to_error: {error_info[:100]}',
-    }

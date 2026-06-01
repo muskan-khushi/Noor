@@ -2,6 +2,20 @@ const axios = require('axios');
 
 const AI_URL = () => process.env.AI_ENGINE_URL || 'http://localhost:8000';
 
+/** Normalise FastAPI / Express error bodies into a user-facing string */
+function formatAiDetail(data) {
+  if (!data) return 'AI engine error.';
+  if (typeof data.message === 'string') return data.message;
+  const detail = data.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map(d => (typeof d === 'string' ? d : d.msg || JSON.stringify(d)))
+      .join('; ');
+  }
+  return 'AI engine error.';
+}
+
 // Default timeouts (ms)
 const TIMEOUTS = {
   gap:              130_000,   // ~2 min for full gap analysis cold start
@@ -36,7 +50,7 @@ async function aiRequest(method, path, data, headers = {}, timeout = 30_000) {
       throw e;
     }
     if (err.response) {
-      const detail = err.response.data?.detail || err.response.data?.message || 'AI engine error.';
+      const detail = formatAiDetail(err.response.data);
       const e = new Error(detail);
       e.isAiServiceError = true;
       e.aiStatus  = err.response.status;

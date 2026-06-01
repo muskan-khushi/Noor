@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ErrorBanner from '../common/ErrorBanner';
 
 /* ── Invariance warning banner ─────────────────────────────── */
 function InvarianceWarning({ inv }) {
@@ -151,6 +152,17 @@ function BatchResults({ results, onReset }) {
 function SingleResult({ data }) {
   const [view, setView] = useState('side');
 
+  if (!data?.rewritten_text) {
+    return (
+      <div style={{
+        textAlign: 'center', padding: '32px 20px',
+        color: 'rgba(255,248,240,0.40)',
+      }}>
+        <p>No localised text was generated for this region.</p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
@@ -227,8 +239,27 @@ function SingleResult({ data }) {
 
 /* ── Main export ────────────────────────────────────────────── */
 export default function HyperOutput({ data, onReset }) {
+  if (data?.success === false) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <ErrorBanner message={data.error || 'Localisation failed.'} />
+        <button type="button" className="btn btn-outline btn-sm" onClick={onReset} style={{ alignSelf: 'flex-start' }}>
+          ↩ Try again
+        </button>
+      </div>
+    );
+  }
+
   // Batch result: has `results` array
   if (data?.results) {
+    if (!data.results.length) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <ErrorBanner message="No regions were localised. Please try again with fewer regions or shorter text." />
+          <button type="button" className="btn btn-outline btn-sm" onClick={onReset}>↩ Try again</button>
+        </div>
+      );
+    }
     return <BatchResults results={data.results} onReset={onReset} />;
   }
 

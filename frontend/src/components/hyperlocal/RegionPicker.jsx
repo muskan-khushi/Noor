@@ -10,55 +10,51 @@ const REGIONS = [
 ];
 
 export default function RegionPicker({ value, onChange, multi = false }) {
-  const isSelected = k => multi ? value.includes(k) : value === k;
+  const isSelected = k => (multi ? value.includes(k) : value === k);
 
   const toggle = k => {
-    if (!multi) { onChange(k); return; }
+    if (!multi) {
+      onChange(k);
+      return;
+    }
     if (value.includes(k)) onChange(value.filter(v => v !== k));
     else onChange([...value, k]);
   };
 
   return (
-    <div>
-      {/* Hidden native select for accessibility / form compat when not multi */}
-      {!multi && (
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label>Student's region</label>
-          <div style={{ position: 'relative' }}>
-            <select value={value} onChange={e => onChange(e.target.value)} style={{ paddingRight: 28 }}>
-              <option value="">Select region…</option>
-              {REGIONS.map(r => <option key={r.key} value={r.key}>{r.flag} {r.label}</option>)}
-            </select>
-            <span style={{ position:'absolute', right:11, top:'50%', transform:'translateY(-50%)',
-              pointerEvents:'none', color:'rgba(255,248,240,0.28)', fontSize:10 }}>▾</span>
-          </div>
-        </div>
-      )}
-
-      {/* Visual pill buttons */}
-      {multi && (
-        <div className="form-group" style={{ marginBottom: 10 }}>
-          <label>Regions (select multiple)</label>
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+    <div className="form-group" style={{ marginBottom: 0 }}>
+      <label>{multi ? 'Regions (select one or more)' : "Student's region"}</label>
+      <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginTop: 10 }}>
         {REGIONS.map(({ key, label, flag, color }) => {
           const sel = isSelected(key);
           return (
-            <button key={key} type="button" onClick={() => toggle(key)} style={{
-              padding: '8px 16px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif", fontWeight: sel ? 600 : 400,
-              background: sel ? `${color}20` : 'rgba(255,248,240,0.04)',
-              color:  sel ? color : 'rgba(255,248,240,0.52)',
-              border: sel ? `1.5px solid ${color}45` : '1.5px solid rgba(255,248,240,0.10)',
-              boxShadow: sel ? `0 0 16px ${color}22` : 'none',
-              transition: 'all 0.22s cubic-bezier(0.34,1.56,0.64,1)',
-            }}>
+            <button
+              key={key}
+              type="button"
+              onClick={() => toggle(key)}
+              aria-pressed={sel}
+              style={{
+                padding: '8px 16px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif", fontWeight: sel ? 600 : 400,
+                background: sel ? `${color}20` : 'rgba(255,248,240,0.04)',
+                color: sel ? color : 'rgba(255,248,240,0.52)',
+                border: sel ? `1.5px solid ${color}45` : '1.5px solid rgba(255,248,240,0.10)',
+                boxShadow: sel ? `0 0 16px ${color}22` : 'none',
+                transition: 'all 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+              }}
+            >
               {flag} {label}
             </button>
           );
         })}
       </div>
+      {!multi && !value && (
+        <p style={{
+          fontSize: 12, color: 'rgba(255,248,240,0.32)', marginTop: 10, marginBottom: 0,
+        }}>
+          Tap a region above to continue.
+        </p>
+      )}
     </div>
   );
 }

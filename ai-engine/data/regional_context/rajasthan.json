@@ -12,5 +12,5 @@
   "water_sources": ["baoli (stepwell)", "taanka (underground rainwater tank)", "johad (pond)"],
   "famous_for": ["Blue City of Jodhpur", "Pink City of Jaipur", "Golden City of Jaisalmer", "Mehrangarh Fort", "Ranthambore", "Chittorgarh Fort"],
   "distances": ["Jodhpur to Jaisalmer 285 km", "Jodhpur to Jaipur 335 km", "Barmer to Bikaner 200 km"],
-  "sample_rewrite_hint": "Use camel trading, millet fields, desert distances, johads, and bajra prices. Replace cars with camels or jeeps on desert roads."
+  "sample_rewrite_hint": "Use camel trading, millet fields, johads, and bajra prices. Replace cars with camels or jeeps — keep every number from the original problem unchanged."
 }

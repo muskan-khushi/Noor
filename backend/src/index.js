@@ -24,7 +24,9 @@ app.use(cors({
     const allowedOrigins = [
       process.env.FRONTEND_URL || 'http://localhost:3000',
       'http://localhost',
-      'http://127.0.0.1:3000'
+      'http://127.0.0.1:3000',
+      'http://172.30.1.35:3000'
+      
     ];
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);

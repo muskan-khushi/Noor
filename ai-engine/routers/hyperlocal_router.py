@@ -33,6 +33,11 @@ def generate_hyperlocal(req: HyperRequest):
     result = rewrite_with_local_context(
         req.original_text, req.concept, req.subject, req.class_level, req.region_key
     )
+    if result.get('success') is False:
+        raise HTTPException(
+            status_code=422,
+            detail=result.get('error', 'Localisation failed while preserving problem numbers.'),
+        )
     return result
 
 @router.post("/batch-generate")
@@ -43,9 +48,12 @@ def batch_generate_hyperlocal(req: BatchHyperRequest):
         if not os.path.exists(str(BASE_DIR / f"data/regional_context/{r_key}.json")):
             raise HTTPException(400, f"Region '{r_key}' not found.")
     
-    results = batch_rewrite_for_multiple_regions(
-        req.original_text, req.concept, req.subject, req.class_level, req.region_keys
-    )
+    try:
+        results = batch_rewrite_for_multiple_regions(
+            req.original_text, req.concept, req.subject, req.class_level, req.region_keys
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     return {"results": results}
 
 @router.get("/regions")
