@@ -117,7 +117,7 @@ export default function Dashboard() {
                 <div style={{ display:'flex', gap:10, alignItems:'center' }}>
                   <span className="badge badge-critical">{r.criticalGaps} critical</span>
                   <span style={{ color:'rgba(255,248,240,0.32)', fontSize:12 }}>{r.totalGapsFound} total</span>
-                  <Link to="/gap-finder" style={{ color:'#FFD4B8', fontWeight:500, fontSize:12.5 }}>View →</Link>
+                  <Link to={`/gap-finder?reportId=${r._id}`} style={{ color:'#FFD4B8', fontWeight:500, fontSize:12.5 }}>View →</Link>
                 </div>
               </div>
             ))}

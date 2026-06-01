@@ -4,9 +4,10 @@ const AI_URL = () => process.env.AI_ENGINE_URL || 'http://localhost:8000';
 
 // Default timeouts (ms)
 const TIMEOUTS = {
-  gap:       130_000,   // ~2 min for full gap analysis cold start
-  hyperlocal: 55_000,
-  regions:    10_000,
+  gap:              130_000,   // ~2 min for full gap analysis cold start
+  hyperlocal:       55_000,
+  hyperlocalBatch:  130_000,   // up to 6 regions in one request
+  regions:          10_000,
 };
 
 /**
@@ -58,7 +59,7 @@ async function generateHyperlocal(payload) {
 
 /** Batch hyperlocal generation for multiple regions */
 async function generateHyperlocalBatch(payload) {
-  return aiRequest('POST', '/hyperlocal/batch-generate', payload, {}, TIMEOUTS.gap);
+  return aiRequest('POST', '/hyperlocal/batch-generate', payload, {}, TIMEOUTS.hyperlocalBatch);
 }
 
 /** Fetch available region list from AI engine */

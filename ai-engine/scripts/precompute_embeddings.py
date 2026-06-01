@@ -17,10 +17,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.embedder import load_or_compute_syllabus_embeddings
 import json
 
-# Must match the keys used in routers/gap_router.py SYLLABUS_MAP
+# Unique syllabus keys from routers/gap_router.py SYLLABUS_MAP (all supported exams)
 SYLLABI = [
     ('neet_chemistry',        'data/syllabi/neet_chemistry.json'),
     ('neet_physics',          'data/syllabi/neet_physics.json'),
+    ('neet_biology',          'data/syllabi/neet_biology.json'),
     ('jee_mains_mathematics', 'data/syllabi/jee_mains_mathematics.json'),
     ('cuet_science',          'data/syllabi/cuet_science.json'),
 ]

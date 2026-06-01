@@ -9,7 +9,11 @@ class Settings(BaseSettings):
     @field_validator('GROQ_API_KEY')
     @classmethod
     def key_must_not_be_empty(cls, v):
-        return v
+        if not v or not str(v).strip():
+            raise ValueError(
+                'GROQ_API_KEY must be set in ai-engine/.env — get a free key at https://console.groq.com'
+            )
+        return str(v).strip()
 
     class Config:
         env_file = ".env"

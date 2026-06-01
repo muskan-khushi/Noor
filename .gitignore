@@ -90,6 +90,9 @@ out
 .nuxt
 dist
 
+# CRA production build (rebuild in CI / Docker)
+frontend/build/
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js
